@@ -14,7 +14,7 @@ echo "This script will test the dynamic path resolution and URL updates"
 
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-BASEPATH="$SCRIPT_DIR"
+BASEPATH="$(dirname "$SCRIPT_DIR")"
 echo "Test script using base path: $BASEPATH"
 
 # Keep track of test results
