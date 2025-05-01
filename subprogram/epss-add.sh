@@ -1,6 +1,10 @@
 #!/bin/sh
 
-BASEPATH=/opt/epss-db
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Set the base path as one level up from the script directory
+BASEPATH="$(dirname "$SCRIPT_DIR")"
+echo "Using base path: $BASEPATH"
 # argument check
 DATEFLAG=false
 DATETARGET=""
@@ -39,7 +43,7 @@ echo "bad"
     return 1
 fi
 
-DIRECTORY="/opt/epss-db/epss-data/3rd"
+DIRECTORY="$BASEPATH/epss-data/3rd"
 
 if [ ! -d "$DIRECTORY" ]; then
     mkdir -p "$DIRECTORY"
@@ -59,11 +63,11 @@ fi
 # file download and argument date check.
 echo "file doanload..."
 cd $BASEPATH/epss-data/3rd
-WGETURL="https://epss.cyentia.com/epss_scores-$DATETARGET.csv.gz"
+WGETURL="https://epss.empiricalsecurity.com/epss_scores-$DATETARGET.csv.gz"
 wget -q $WGETURL
 if [ $? -ne 0 ]; then
         echo "NG: Target data can not download."
-        echo "    Check wget -q https://epss.cyentia.com/epss_scores-$DATETARGET.csv.gz command."
+        echo "    Check wget -q https://epss.empiricalsecurity.com/epss_scores-$DATETARGET.csv.gz command."
         exit 1
 fi
 
@@ -80,7 +84,7 @@ gzip $UNGZFILE
 
 # import data
 echo "data import"
-mysql --defaults-extra-file=/opt/epss-db/my.cnf -u root epssdb -e "load data infile '$OUTFILE' into table epssdb fields terminated by ',' enclosed by '\"' (cve,epss,percentile,model,date);"
+mysql --defaults-extra-file=$BASEPATH/my.cnf -u root epssdb -e "load data infile '$OUTFILE' into table epssdb fields terminated by ',' enclosed by '\"' (cve,epss,percentile,model,date);"
 rm $OUTFILE
 
 echo "FINISHED"

@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BASEPATH="$(dirname "$SCRIPT_DIR")"
+# Note: We're not using BASEPATH in this script, but added for consistency
+
 infile=$1
 outfile="/var/lib/mysql-files/vulnrichment.csv"
 
