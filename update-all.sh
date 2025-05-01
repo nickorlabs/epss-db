@@ -1,9 +1,14 @@
 #!/bin/sh
 
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BASEPATH="$SCRIPT_DIR"
+echo "Using base path: $BASEPATH"
+
 # Please uncomment it if necessary.
 echo "Update EPSS data"
-/opt/epss-db/update-epss.sh
-#echo"Update KEV Catalog data"
-#/opt/epss-db/update-kev.sh
+"$BASEPATH/update-epss.sh"
+#echo "Update KEV Catalog data"
+#"$BASEPATH/update-kev.sh"
 #echo "Update Vulnrichment data"
-#/opt/epss-db/update-vulnrich.sh
+#"$BASEPATH/update-vulnrich.sh"

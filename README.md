@@ -15,6 +15,13 @@ Supported data
 
 # What's NEW!
 
+- 2025-05-01
+  - Added dynamic path detection to all scripts
+    - Scripts now detect their location automatically, making the system more portable
+    - Removed hardcoded paths for better installation flexibility
+    - Updated all EPSS data URLs from epss.cyentia.com to epss.empiricalsecurity.com
+    - Added test suite in /tests directory to validate system functionality
+  
 - 2024-05-23 JST
   - Experimental suport: Vulnrichment data!
     - Please refer to the following for details.
@@ -372,3 +379,27 @@ https://www.cisa.gov/known-exploited-vulnerabilities-catalog
 |dueDate                   |string            |format: YYYY-MM-DD        |date         |
 |knownRansomwareCampaignUse|string            |(Known or Unknown only?)  |text         |
 |notes                     |string            |                          |text         |
+
+# Test Suite
+
+This repository includes a test suite that verifies the functionality of the scripts and their ability to access external data sources. The test suite is located in the `/tests` directory.
+
+## Running the Tests
+
+To run the tests, simply execute the `test-scripts.sh` script from the repository root:
+
+```bash
+./tests/test-scripts.sh
+```
+
+The test suite checks:
+
+1. **Dynamic Path Detection** - Verifies that all scripts use dynamic path detection
+2. **Configuration Access** - Ensures scripts can find configuration files
+3. **URL Verification** - Checks that all data source URLs are correctly configured and accessible
+   - EPSS data URLs (now using epss.empiricalsecurity.com)
+   - KEV Catalog URLs
+   - Vulnrichment repository access
+4. **Script Cross-References** - Verifies that scripts can find and execute other scripts
+
+Running the tests is a good way to verify that your installation is configured correctly.

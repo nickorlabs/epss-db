@@ -1,13 +1,18 @@
 #!/bin/bash
 # modified from init-script/kev-init.sh
 
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BASEPATH="$SCRIPT_DIR"
+echo "Using base path: $BASEPATH"
+
 # environment
 json_url="https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 
 # create kev table
 
-mysql --defaults-extra-file=/opt/epss-db/my.cnf -u root epssdb -e "drop table kevcatalog;"
-mysql --defaults-extra-file=/opt/epss-db/my.cnf -u root epssdb -e "create table kevcatalog( id int auto_increment, cveID varchar(28), vendorProject text, product text, vulnerabilityName text, dateAdded DATE, shortDescription text, requiredAction text, dueDate DATE, knownRansomwareCampaignUse text, notes text, INDEX (id));"
+mysql --defaults-extra-file="$BASEPATH/my.cnf" -u root epssdb -e "drop table kevcatalog;"
+mysql --defaults-extra-file="$BASEPATH/my.cnf" -u root epssdb -e "create table kevcatalog( id int auto_increment, cveID varchar(28), vendorProject text, product text, vulnerabilityName text, dateAdded DATE, shortDescription text, requiredAction text, dueDate DATE, knownRansomwareCampaignUse text, notes text, INDEX (id));"
 
 escapeCmd() {
   sed -e "s/'/\\\'/g" | sed -e 's/"/\\\"/g'
@@ -47,7 +52,7 @@ process_json() {
 #    echo "notes: $notes"
 
     # insert to database:epss/kevcatalog
-    mysql --defaults-extra-file=/opt/epss-db/my.cnf -u root epssdb -e "insert into kevcatalog (cveID, vendorProject, product, vulnerabilityName, dateAdded, shortDescription, requiredAction, dueDate, knownRansomwareCampaignUse, notes) values('$cveID', '$vendorProject', '$product', '$vulnerabilityName', '$dateAdded', '$shortDescription', '$requiredAction', '$dueDate', '$knownRansomwareCampaignUse', '$notes')"
+    mysql --defaults-extra-file="$BASEPATH/my.cnf" -u root epssdb -e "insert into kevcatalog (cveID, vendorProject, product, vulnerabilityName, dateAdded, shortDescription, requiredAction, dueDate, knownRansomwareCampaignUse, notes) values('$cveID', '$vendorProject', '$product', '$vulnerabilityName', '$dateAdded', '$shortDescription', '$requiredAction', '$dueDate', '$knownRansomwareCampaignUse', '$notes')"
 
 
   done <<< "$(echo "$data" | jq -c '.vulnerabilities[]')"
