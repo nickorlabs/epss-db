@@ -144,14 +144,14 @@ cd $BASEPATH
 echo "  create db,table"
 ## table create
 mysql --defaults-extra-file="$BASEPATH/my.cnf" -u root -e "create database epssdb;"
-mysql --defaults-extra-file="$BASEPATH/my.cnf" -u root -e "set global local_infile = 1;"
-mysql --defaults-extra-file="$BASEPATH/my.cnf" -u root epssdb -e "create table epssdb( id int auto_increment, cve varchar(20), epss DOUBLE, percentile DOUBLE, model VARCHAR(20), date DATE, INDEX (id));"
+mysql --defaults-extra-file="$BASEPATH/my.cnf" -e "set global local_infile = 1;"
+mysql --defaults-extra-file="$BASEPATH/my.cnf" epssdb -e "create table epssdb( id int auto_increment, cve varchar(20), epss DOUBLE, percentile DOUBLE, model VARCHAR(20), date DATE, INDEX (id));"
 
 ## data import
 for file in *.csv
 do
         echo "  importing: $file"
-        mysql --defaults-extra-file="$BASEPATH/my.cnf" -u root epssdb -e "load data infile '$EPSS_DATA_PATH/$file' into table epssdb fields terminated by ',' enclosed by '\"' (cve,epss,percentile,model,date);"
+        mysql --defaults-extra-file="$BASEPATH/my.cnf" epssdb -e "load data infile '$EPSS_DATA_PATH/$file' into table epssdb fields terminated by ',' enclosed by '\"' (cve,epss,percentile,model,date);"
         rm $file
 done
 
