@@ -24,8 +24,8 @@ Supported data
   
 - 2024-05-23 JST
   - Experimental suport: Vulnrichment data!
-    - Please refer to the following for details.
-    - https://github.com/hogehuga/richmentdb
+    - Data sourced from the official CISA repository: https://github.com/cisagov/vulnrichment
+    - The vulnrichment-init.sh script automatically clones this repository
 - 2024-05-02 JST
   - CISA Known Exploited Vulnerabilities Catalog(a.k.a KEV Catalog) is comming!
     - epssdb/kevcatalog table available.
@@ -181,8 +181,11 @@ $ docker exec -it epssdb /bin/bash
 (work inside a container)
 # cd /opt/epss-db/init-script
 # ./vulnrichment-init.sh
-
 ```
+
+This script will:
+1. Create the necessary database tables
+2. Clone the official CISA Vulnrichment repository (https://github.com/cisagov/vulnrichment)
 
 
 ## Data analysis: EPSS
@@ -326,11 +329,19 @@ mysql>
 
 ## Experimental: Vulnrichment update
 
-Since the data update status is unknown, please delete all data and register again.
+**Important**: Before running the update script for the first time, you must initialize the Vulnrichment database using the `vulnrichment-init.sh` script as described in the setup section above.
+
+To update the Vulnrichment data after initialization:
 
 ```
-# /opt/epss-db/update-vulnrich.sh
+# cd /opt/epss-db
+# ./update-vulnrich.sh
 ```
+
+This script will:
+1. Pull the latest updates from the CISA Vulnrichment repository
+2. Process the JSON files into CSV format
+3. Import the data into the MySQL database
 
 ## Experimental: Vulnrichment remove
 

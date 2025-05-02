@@ -4,19 +4,22 @@ I'm planning to work on this issue to add exploit information from multiple sour
 
 ### Key Exploit Sources
 
-**Initial Implementation:**
+**Initial Implementation (Phase 1):**
 - Metasploit Framework modules
-- ExploitDB repository (using searchsploit tool: `searchsploit --cve CVE-ID`)
+- ExploitDB repository (exploring both searchsploit tool and direct data access)
 - Nuclei vulnerability templates
-- GitHub exploit code repositories (via PoC-in-GitHub API: https://poc-in-github.motikan2010.net/)
-- KEV Catalog (already implemented)
+- GitHub exploit code repositories (evaluating multiple approaches) 
+- Packet Storm Security (exploit and advisory data)
 
-**Future Additions:**
+
+**Phase 2 Implementation:**
+- AttackerKB vulnerability assessments
+- OSV database (Open Source Vulnerabilities)
 - GrayNoise intelligence
-- AttackerKB
-- Packet Storm
-- OSV database
-- Vendor advisories
+
+**Future Additions (Phase 3):**
+- Vendor-specific advisories (Microsoft, Apache, etc.)
+- Additional intelligence sources
 
 ### Implementation Plan
 

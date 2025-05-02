@@ -84,7 +84,7 @@ gzip $UNGZFILE
 
 # import data
 echo "data import"
-mysql --defaults-extra-file=$BASEPATH/my.cnf -u root epssdb -e "load data infile '$OUTFILE' into table epssdb fields terminated by ',' enclosed by '\"' (cve,epss,percentile,model,date);"
+mysql --defaults-extra-file=$BASEPATH/my.cnf epssdb -e "load data infile '$OUTFILE' into table epssdb fields terminated by ',' enclosed by '\"' (cve,epss,percentile,model,date);"
 rm $OUTFILE
 
 echo "FINISHED"
