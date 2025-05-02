@@ -6,7 +6,7 @@ BASEPATH="$(dirname "$SCRIPT_DIR")"
 # Note: We're not using BASEPATH in this script, but added for consistency
 
 infile=$1
-outfile="/var/lib/mysql-files/vulnrichment.csv"
+outfile="/opt/epss-db/epss-data/vulnrichment.csv"
 
 # CVE-ID
 cveid=`jq -r '.cveMetadata.cveId // "NULL"' $infile`
@@ -55,6 +55,33 @@ fi
 
 cnaV40severity=`jq -r '.containers.cna.metrics[]? | select(.cvssV4_0) | .cvssV4_0.baseSeverity' $infile`
 cnaV40vector=`jq -r '.containers.cna.metrics[]? | select(.cvssV4_0) | .cvssV4_0.vectorString' $infile`
+
+# Sanitize all fields to ensure single-line, trimmed, safe output
+sanitize() {
+  echo "$1" | tr -d '\n\r' | sed 's/^ *//;s/ *$//'
+}
+
+cveid=$(sanitize "$cveid")
+cweid=$(sanitize "$cweid")
+ssvcExpl=$(sanitize "$ssvcExpl")
+ssvcAuto=$(sanitize "$ssvcAuto")
+ssvcTech=$(sanitize "$ssvcTech")
+kevDate=$(sanitize "$kevDate")
+kevRef=$(sanitize "$kevRef")
+adpV31score=$(sanitize "$adpV31score")
+adpV31severity=$(sanitize "$adpV31severity")
+adpV31vector=$(sanitize "$adpV31vector")
+cnaV31score=$(sanitize "$cnaV31score")
+cnaV31severity=$(sanitize "$cnaV31severity")
+cnaV31vector=$(sanitize "$cnaV31vector")
+cnaV40score=$(sanitize "$cnaV40score")
+cnaV40severity=$(sanitize "$cnaV40severity")
+cnaV40vector=$(sanitize "$cnaV40vector")
+
+# Ensure numeric fields are valid floats, else set to 0
+echo "$adpV31score" | grep -Eq '^[0-9]+(\.[0-9]+)?$' || adpV31score="0"
+echo "$cnaV31score" | grep -Eq '^[0-9]+(\.[0-9]+)?$' || cnaV31score="0"
+echo "$cnaV40score" | grep -Eq '^[0-9]+(\.[0-9]+)?$' || cnaV40score="0"
 
 # output
 echo "\"$cveid\",\"$cweid\",\"$ssvcExpl\",\"$ssvcAuto\",\"$ssvcTech\",\"$kevDate\",\"$kevRef\",\"$adpV31score\",\"$adpV31severity\",\"$adpV31vector\",\"$cnaV31score\",\"$cnaV31severity\",\"$cnaV31vector\",\"$cnaV40score\",\"$cnaV40severity\",\"$cnaV40vector\"" >> $outfile
