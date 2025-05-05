@@ -1,0 +1,43 @@
+import os
+import psycopg2
+
+PG_CONFIG = {
+    'host': os.environ.get('PGHOST', 'db'),
+    'user': os.environ.get('PGUSER', 'postgres'),
+    'password': os.environ.get('PGPASSWORD', 'postgres'),
+    'dbname': os.environ.get('PGDATABASE', 'epssdb'),
+}
+
+EPSS_CSV = 'epss.csv'  # Now reads from project directory
+
+def import_epss():
+    print("Importing EPSS data into PostgreSQL with COPY ...")
+    conn = None
+    try:
+        conn = psycopg2.connect(**PG_CONFIG)
+        conn.autocommit = True
+        cursor = conn.cursor()
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS epss (
+            cve_id TEXT PRIMARY KEY,
+            epss FLOAT,
+            percentile FLOAT,
+            date DATE
+        );
+        """)
+        with open(EPSS_CSV, 'r', encoding='utf-8') as f:
+            cursor.copy_expert(
+                "COPY epss (cve_id, epss, percentile, date) FROM STDIN WITH CSV HEADER",
+                f
+            )
+        print("Imported EPSS data into PostgreSQL via COPY.")
+    except Exception as e:
+        print(f"PostgreSQL Error: {e}")
+        exit(1)
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
+
+if __name__ == "__main__":
+    import_epss()

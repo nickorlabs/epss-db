@@ -1,0 +1,5 @@
+# You usually do not need to build a custom Dockerfile for Postgres unless you want to install extensions or custom configs
+# This file is provided for completeness and future extensibility.
+FROM postgres:16
+# Example: install pgvector extension if needed
+# RUN apt-get update && apt-get install -y postgresql-16-vector

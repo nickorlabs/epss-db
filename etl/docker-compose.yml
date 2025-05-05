@@ -1,0 +1,153 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: epssdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  importer:
+    build:
+      context: .
+      dockerfile: Dockerfile.importer
+    volumes:
+      - ./:/scripts
+    working_dir: /scripts
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: epssdb
+
+  epss_importer:
+    build:
+      context: .
+      dockerfile: Dockerfile.importer
+    volumes:
+      - ./:/scripts
+      - ../../:/project_root
+    working_dir: /project_root
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: epssdb
+    command: ["python", "update_epss.py"]
+
+  kev_importer:
+    build:
+      context: .
+      dockerfile: Dockerfile.importer
+    volumes:
+      - ./:/scripts
+      - ../../:/project_root
+    working_dir: /project_root
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: epssdb
+    command: ["python", "update_kev.py"]
+
+  vulnrich_importer:
+    build:
+      context: .
+      dockerfile: Dockerfile.importer
+    volumes:
+      - ./:/scripts
+      - ../../:/project_root
+    working_dir: /project_root
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: epssdb
+    command: ["python", "update_vulnrich.py"]
+
+  # If you ever need to build a custom DB image (e.g., for extensions), uncomment below:
+  # db:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.db
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: epssdb
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+
+  metadata_importer:
+    image: python:3.11
+    volumes:
+      - ./:/scripts
+    working_dir: /scripts
+    command: bash -c "pip install -r requirements.txt && python exploit_metadata_import.py"
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: epssdb
+
+  tags_importer:
+    image: python:3.11
+    volumes:
+      - ./:/scripts
+    working_dir: /scripts
+    command: bash -c "pip install -r requirements.txt && python exploit_tags_import.py"
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: epssdb
+
+  # Duplicate epss_importer removed; use the custom-image-based epss_importer above.
+
+  vulnrichment_importer:
+    image: python:3.11
+    volumes:
+      - ./:/scripts
+    working_dir: /scripts
+    command: bash -c "pip install -r requirements.txt && python vulnrichment_import.py"
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: epssdb
+
+  # Legacy kev_importer removed; see above for new kev_importer running update_kev.py
+  update_all:
+    build:
+      context: .
+      dockerfile: Dockerfile.importer
+    volumes:
+      - ./:/scripts
+    working_dir: /scripts
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: epssdb
+    command: ["python", "update_all.py"]
+
+volumes:
+  pgdata:
