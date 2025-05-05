@@ -1,35 +1,164 @@
 # epss-db
-Download all epss data, and import database. We can explore the data by SQL querys!
 
-**NOW: THIS IS AN EXPERIMENTAL IMPLEMENTATION.**
+A modern, Dockerized ETL system for downloading, processing, and exploring EPSS, CISA KEV, and Vulnrichment data in PostgreSQL.
 
-- Sehll script verison.
-- Work on mysql docker image.
+---
 
-README.md was created using Google Translate.
+## Major Update: Python & Docker Migration (2025-05)
 
-Supported data
-- epss
-- KEV Catalog
-- Vulnrichment
+- **All data import and ETL workflows are now implemented in Python.**
+- **PostgreSQL** is the supported database (MySQL support is deprecated).
+- **Legacy shell scripts and MySQL configs are archived** in `/archive/`.
+- **Docker Compose** is used for reproducible, multi-service orchestration.
+- **Data sources:**
+  - EPSS (Empirical Security)
+  - CISA Known Exploited Vulnerabilities (KEV)
+  - CISA Vulnrichment
+  - ExploitDB (Offensive Security Exploit Database)
+- **Extensible:** Easy to add new data sources or analytics.
 
-# What's NEW!
+---
 
-- 2024-05-23 JST
-  - Experimental suport: Vulnrichment data!
-    - Please refer to the following for details.
-    - https://github.com/hogehuga/richmentdb
-- 2024-05-02 JST
-  - CISA Known Exploited Vulnerabilities Catalog(a.k.a KEV Catalog) is comming!
-    - epssdb/kevcatalog table available.
-- 2024-01-21 JST
-  - epss-graph.sh is comming! Plot EPSS/Percentile graph by CVE-ID.
-- 2024-01-20 JST
-  - It has been redesigned to be simpler!
-    - remove sqlite3 version, because toooooo slow(access single 40GB file)
-    - I decided to use a Docker image
-- 2023-12-10 JST
-  - Added epss-add.sh to add data.
+## Project Structure
+
+```
+/opt/epss-fork/
+├── README.md, LICENSE, PULL_REQUEST.md
+├── etl/
+│   ├── Dockerfile.importer
+│   ├── docker-compose.yml
+│   ├── requirements.txt
+│   ├── update_epss.py         # Python ETL: EPSS
+│   ├── update_kev.py          # Python ETL: CISA KEV
+│   ├── update_vulnrich.py     # Python ETL: Vulnrichment
+│   ├── update_exploitdb.py    # Python ETL: ExploitDB (exploits, tags, metadata)
+│   └── update_all.py          # Run all ETL jobs in sequence
+├── etl/epss-data/         # EPSS data storage (auto-downloaded)
+├── etl/vulnrichment/      # Vulnrichment repo (auto-cloned)
+├── etl/exploitdb-data/    # ExploitDB CSV/temp storage (auto-downloaded, auto-removed after ETL)
+├── archive/               # Legacy scripts, configs, and old data
+├── docker/, docs/, tests/
+└── ...
+```
+
+---
+
+## Usage
+
+1. **Build and run all ETL jobs:**
+   ```bash
+   cd etl
+   docker-compose build update_all
+   docker-compose run --rm update_all
+   ```
+
+   Or run individual jobs (e.g. EPSS only):
+   ```bash
+   docker-compose run --rm update_epss
+   ```
+
+2. **Query the data in PostgreSQL:**
+   Use `psql` or any SQL client to explore tables:
+   - `epss` (EPSS scores)
+   - `kevcatalog` (CISA KEV)
+   - `vulnrichment` (Vulnrichment details)
+   - `exploits`, `exploit_tags`, `exploit_metadata` (ExploitDB and related tables)
+   - All tables are in the `epssdb` database.
+
+---
+
+## Legacy Scripts
+All old shell scripts and MySQL configs are archived in `/archive/` and are no longer maintained. Use the new Python ETL scripts for all workflows.
+
+---
+
+## Next Steps
+- NVD data integration planned
+- UI frontend for data exploration (coming soon)
+- See [issues](https://github.com/hogehuga/epss-db/issues) for roadmap
+
+---
+
+## Appendix: Legacy Project Info
+
+The following section preserves the original project structure and setup/usage from the legacy (MySQL/shell) version of this repository. This is for historical reference only. **For all new deployments and usage, follow the main instructions above.**
+
+### Original Directory Structure
+```
+/opt/epss-db
+|-- Documents
+|   |-- epss-graph.png
+|   `-- epss-graph_-a.png
+|-- LICENSE
+|-- README.md
+|-- docker
+|   |-- Dockerfile
+|   |-- README.md
+|   `-- env
+|-- epss-graph.sh
+|-- init-script
+|   |-- epss-init.sh
+|   |-- kev-init.sh
+|   `-- vulnrichment-init.sh
+|-- my.cnf
+|-- queryConsole.sh
+|-- skel
+|   `-- plot.plt
+|-- subprogram
+|   |-- epss-add.sh
+|   `-- vulnrichUpdate.sh
+|-- update-all.sh
+|-- update-epss.sh
+|-- update-kev.sh
+`-- update-vulnrich.sh
+```
+
+### Legacy Setup & Usage
+#### Docker Image
+```
+$ docker pull hogehuga/epss-db
+```
+
+#### Create Docker Volumes
+```
+$ docker volume create epssDB
+$ docker volume create epssFile
+```
+
+#### Run Container (legacy)
+```
+$ docker container run --name epssdb -v epssDB:/var/lib/mysql -v epssFile:/opt/epss-db/epss-data -e MYSQL_ROOT_PASSWORD=mysql -d hogehuga/epss-db
+```
+
+#### Prepare Data (legacy)
+```
+$ docker exec -it epssdb /bin/bash
+# cd /opt/epss-db/init-script
+# ./epss-init.sh
+```
+
+#### Optional: KEV Catalog (legacy)
+```
+$ docker exec -it epssdb /bin/bash
+# cd /opt/epss-db/init-script
+# ./kev-init.sh
+```
+
+#### Experimental: Vulnrichment (legacy)
+```
+$ docker exec -it epssdb /bin/bash
+# cd /opt/epss-db/init-script
+# ./vulnrichment-init.sh
+```
+
+#### Notes
+- The original project used MySQL, shell scripts, and manual volume management.
+- Data was stored in `.gz` files and loaded via MySQL scripts.
+- All new workflows use Python, PostgreSQL, and Docker Compose for a modern, unified ETL experience.
+
+---
+
+**Contributions and PRs are welcome!**
 - 2023-12-04 JST
   - First release.
 
@@ -174,8 +303,11 @@ $ docker exec -it epssdb /bin/bash
 (work inside a container)
 # cd /opt/epss-db/init-script
 # ./vulnrichment-init.sh
-
 ```
+
+This script will:
+1. Create the necessary database tables
+2. Clone the official CISA Vulnrichment repository (https://github.com/cisagov/vulnrichment)
 
 
 ## Data analysis: EPSS
@@ -319,11 +451,19 @@ mysql>
 
 ## Experimental: Vulnrichment update
 
-Since the data update status is unknown, please delete all data and register again.
+**Important**: Before running the update script for the first time, you must initialize the Vulnrichment database using the `vulnrichment-init.sh` script as described in the setup section above.
+
+To update the Vulnrichment data after initialization:
 
 ```
-# /opt/epss-db/update-vulnrich.sh
+# cd /opt/epss-db
+# ./update-vulnrich.sh
 ```
+
+This script will:
+1. Pull the latest updates from the CISA Vulnrichment repository
+2. Process the JSON files into CSV format
+3. Import the data into the MySQL database
 
 ## Experimental: Vulnrichment remove
 
@@ -372,3 +512,27 @@ https://www.cisa.gov/known-exploited-vulnerabilities-catalog
 |dueDate                   |string            |format: YYYY-MM-DD        |date         |
 |knownRansomwareCampaignUse|string            |(Known or Unknown only?)  |text         |
 |notes                     |string            |                          |text         |
+
+# Test Suite
+
+This repository includes a test suite that verifies the functionality of the scripts and their ability to access external data sources. The test suite is located in the `/tests` directory.
+
+## Running the Tests
+
+To run the tests, simply execute the `test-scripts.sh` script from the repository root:
+
+```bash
+./tests/test-scripts.sh
+```
+
+The test suite checks:
+
+1. **Dynamic Path Detection** - Verifies that all scripts use dynamic path detection
+2. **Configuration Access** - Ensures scripts can find configuration files
+3. **URL Verification** - Checks that all data source URLs are correctly configured and accessible
+   - EPSS data URLs (now using epss.empiricalsecurity.com)
+   - KEV Catalog URLs
+   - Vulnrichment repository access
+4. **Script Cross-References** - Verifies that scripts can find and execute other scripts
+
+Running the tests is a good way to verify that your installation is configured correctly.
