@@ -1,8 +1,14 @@
-# epss-db
+# ExploitPulse
 
-A modern, Dockerized ETL system for downloading, processing, and exploring EPSS, CISA KEV, and Vulnrichment data in PostgreSQL.
+**Real-Time Vulnerability Intelligence & ETL Platform**
+
+ExploitPulse is a modern, Dockerized ETL system for downloading, processing, and exploring vulnerability intelligence data from EPSS, CISA KEV, MITRE, NVD, ExploitDB, Vulnrichment, and more—all in PostgreSQL. Built for extensibility, validation, and actionable security analytics.
 
 ---
+
+## Project Status: Independent Development (2025-05)
+
+This repository is now an independent project, maintained and extended by the Nickorlabs team. ExploitPulse is focused on robust, extensible ETL for vulnerability intelligence, with strong validation and a modern, reproducible stack.
 
 ## Major Update: Python & Docker Migration (2025-05)
 
@@ -25,7 +31,7 @@ A modern, Dockerized ETL system for downloading, processing, and exploring EPSS,
 ## Project Structure
 
 ```
-/opt/epss-fork/
+/opt/ExploitPulse/
 ├── README.md, LICENSE, PULL_REQUEST.md
 ├── etl/
 │   ├── Dockerfile.importer
@@ -66,7 +72,7 @@ A modern, Dockerized ETL system for downloading, processing, and exploring EPSS,
    - `kevcatalog` (CISA KEV)
    - `vulnrichment` (Vulnrichment details)
    - `exploits`, `exploit_tags`, `exploit_metadata` (ExploitDB and related tables)
-   - All tables are in the `epssdb` database.
+   - All tables are in the `exploitpulse` database.
 
 ---
 
@@ -85,7 +91,7 @@ All old shell scripts and MySQL configs are archived in `/archive/` and are no l
 ## Next Steps
 - Extend inline validation to all other feeds (ExploitDB, OSV, Snyk, etc.)
 - UI frontend for data exploration (coming soon)
-- See [issues](https://github.com/hogehuga/epss-db/issues) for roadmap
+- See [issues](https://github.com/nickorlabs/ExploitPulse/issues) for roadmap
 
 ---
 
@@ -95,7 +101,7 @@ The following section preserves the original project structure and setup/usage f
 
 ### Original Directory Structure
 ```
-/opt/epss-db
+/opt/ExploitPulse
 |-- Documents
 |   |-- epss-graph.png
 |   `-- epss-graph_-a.png
@@ -126,7 +132,7 @@ The following section preserves the original project structure and setup/usage f
 ### Legacy Setup & Usage
 #### Docker Image
 ```
-$ docker pull hogehuga/epss-db
+$ docker pull hogehuga/ExploitPulse
 ```
 
 #### Create Docker Volumes
@@ -137,27 +143,27 @@ $ docker volume create epssFile
 
 #### Run Container (legacy)
 ```
-$ docker container run --name epssdb -v epssDB:/var/lib/mysql -v epssFile:/opt/epss-db/epss-data -e MYSQL_ROOT_PASSWORD=mysql -d hogehuga/epss-db
+$ docker container run --name epssdb -v epssDB:/var/lib/mysql -v epssFile:/opt/ExploitPulse/epss-data -e MYSQL_ROOT_PASSWORD=mysql -d hogehuga/ExploitPulse
 ```
 
 #### Prepare Data (legacy)
 ```
 $ docker exec -it epssdb /bin/bash
-# cd /opt/epss-db/init-script
+# cd /opt/ExploitPulse/init-script
 # ./epss-init.sh
 ```
 
 #### Optional: KEV Catalog (legacy)
 ```
 $ docker exec -it epssdb /bin/bash
-# cd /opt/epss-db/init-script
+# cd /opt/ExploitPulse/init-script
 # ./kev-init.sh
 ```
 
 #### Experimental: Vulnrichment (legacy)
 ```
 $ docker exec -it epssdb /bin/bash
-# cd /opt/epss-db/init-script
+# cd /opt/ExploitPulse/init-script
 # ./vulnrichment-init.sh
 ```
 
@@ -172,7 +178,7 @@ $ docker exec -it epssdb /bin/bash
 - 2023-12-04 JST
   - First release.
 
-# Wht's This?
+# What's This?
 
 EPSS is Exploit Prediction Scoreing Syste from FIRST ( https://www.first.org/epss/ ).
 
@@ -197,7 +203,7 @@ An environment where Docker can be executed is required.
 
 
 ```
-/opt/epss-db
+/opt/ExploitPulse
 |-- Documents
 |   |-- epss-graph.png
 |   `-- epss-graph_-a.png
@@ -261,7 +267,7 @@ An environment where Docker can be executed is required.
 Get Dockaer image
 
 ```
-$ docker pull hogehuga/epss-db
+$ docker pull hogehuga/ExploitPulse
 ```
 
 Create docker volume
@@ -274,17 +280,17 @@ $ docker volume create epssFile
 ```
 
 Run container
-- If you want to share the "share" directory for sharing analysis results, please add `-v <yourShredDirctory>:/opt/epss-db/share`.
-  - eg. container:/opt/epss-db/share , host sahred:/home/hogehuga/share. -> `-v /home/hogehuga/share:/opt/epss-db/share`
+- If you want to share the "share" directory for sharing analysis results, please add `-v <yourShredDirctory>:/opt/ExploitPulse/share`.
+  - eg. container:/opt/ExploitPulse/share , host sahred:/home/hogehuga/share. -> `-v /home/hogehuga/share:/opt/ExploitPulse/share`
 ```
-$ docker container run --name epssdb -v epssDB:/var/lib/mysql -v epssFile:/opt/epss-db/epss-data -e MYSQL_ROOT_PASSWORD=mysql -d hogehuga/epss-db
+$ docker container run --name epssdb -v epssDB:/var/lib/mysql -v epssFile:/opt/ExploitPulse/epss-data -e MYSQL_ROOT_PASSWORD=mysql -d hogehuga/ExploitPulse
 ```
 
 Prepare the data
 ```
 $ docker exec -it epssdb /bin/bash
 (work inside a container)
-# cd /opt/epss-db/init-script
+# cd /opt/ExploitPulse/init-script
 # ./epss-init.sh
 ```
 
@@ -299,7 +305,7 @@ Init for The KEV Catalog database.
 ```
 $ docker exec -it epssdb /bin/bash
 (work inside a container)
-# cd /opt/epss-db/init-script
+# cd /opt/ExploitPulse/init-script
 # ./kev-init.sh
 ```
 
@@ -311,7 +317,7 @@ Init for The Vulnrichment database
 ```
 $ docker exec -it epssdb /bin/bash
 (work inside a container)
-# cd /opt/epss-db/init-script
+# cd /opt/ExploitPulse/init-script
 # ./vulnrichment-init.sh
 ```
 
@@ -327,7 +333,7 @@ Enter the container and use SQL commands to perform analysis.
 ```
 $ docker exec -it epssdb /bin/bash
 (work inside a container)
-# cd /opt/epss-db
+# cd /opt/ExploitPulse
 # ./epssquery.sh
 mysql> select * from epssdb limit 1;
 +----+---------------+---------+------------+-------+------------+
@@ -346,7 +352,7 @@ Create EPSS and percentile charts and CSV data for the past 180 days.
 - Using the `-a` option will create the graph using all the data present in the database.
 - Data will be created under ./shera directory
   - <CVE-ID>.csv: CSV data
-  - EPSS-<CVE-ID>.png: Graph
+  - ExploitPulse<CVE-ID>.png: Graph
   - skel-<CVE-ID>.plt: gnuplot script. Template is `./skel/plot.plt`
 
 If you want to change gnuplot options, edit the skel-<CVE-ID>.plt file.
@@ -358,7 +364,7 @@ If you want to change gnuplot options, edit the skel-<CVE-ID>.plt file.
 ```
 # ./epss-graph.sh -cve "CVE-2022-27016"
 ; -> ./share/CVE-2022-27016.csv (from:180 days ago)
-; -> ./share/EPSS-CVE-2022-27016.png
+; -> ./share/ExploitPulseCVE-2022-27016.png
 
 # ./epss-graph.sh -cve "CVE-2022-27016" -a
 ; -> Similar to above, but creates images for all registered periods
@@ -376,12 +382,12 @@ Automatically registers data from the last registered data to the latest data in
 # ./epss-autoAdd.sh
 ```
 
-## Update epss-db
+## Update ExploitPulse
 
 `git pull origin` or rebuild container.
 
 ```
-# cd /opt/epss-db
+# cd /opt/ExploitPulse
 # git pull origin
 ```
 
@@ -389,12 +395,12 @@ Automatically registers data from the last registered data to the latest data in
 on HOST
 
 $ docker stop epssdb
-$ docker pull hogehuga/epss-db
-$ docker container run --name epssdbNEWNAME -v epssDB:/var/lib/mysql -v epssFile:/opt/epss-db/epss-data -e MYSQL_ROOT_PASSWORD=mysql -d hogehuga/epss-db
+$ docker pull hogehuga/ExploitPulse
+$ docker container run --name epssdbNEWNAME -v epssDB:/var/lib/mysql -v epssFile:/opt/ExploitPulse/epss-data -e MYSQL_ROOT_PASSWORD=mysql -d hogehuga/ExploitPulse
   ; Please specify the same value as last time
 
 NOTE:
-- Databases(/var/lib/mysql as "epssDB" docker volume) and files(/opt/epss-db/epss-data as "epssFile" docker volume) will be inherited.
+- Databases(/var/lib/mysql as "epssDB" docker volume) and files(/opt/ExploitPulse/epss-data as "epssFile" docker volume) will be inherited.
 ```
 
 ## Optional: KEV Catalog search
@@ -404,7 +410,7 @@ At the moment, we are using SQL.
 ```
 $ docker exec -it epssdb /bin/bash
 (work inside a container)
-# cd /opt/epss-db
+# cd /opt/ExploitPulse
 # ./epssquery.sh
 mysql> select YEAR(dateAdded) as year, count(dateAdded) as count from kevcatalog group by year ;
 +------+-------+
@@ -433,7 +439,7 @@ mysql>
 Unlike CVSS etc., it does not provide differences, so please delete the database and re-register it.
 
 ```
-# cd /opt/epss-db
+# cd /opt/ExploitPulse
 # ./kev-refresh.sh
 CVE-nnnn-nnnn
 ...
@@ -466,7 +472,7 @@ mysql>
 To update the Vulnrichment data after initialization:
 
 ```
-# cd /opt/epss-db
+# cd /opt/ExploitPulse
 # ./update-vulnrich.sh
 ```
 
@@ -480,14 +486,14 @@ This script will:
 1. remove from database
 
 ```
-# /opt/epss-db/queryConsole.sh
+# /opt/ExploitPulse/queryConsole.sh
 > drop table richment;
 ```
 
 2. remove local repositories file
 
 ```
-# rm -rf /opt/epss-db/ulnrichment
+# rm -rf /opt/ExploitPulse/ulnrichment
 ```
 
 
