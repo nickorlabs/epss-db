@@ -12,7 +12,9 @@
 </p>
 
 
-**Real-Time Vulnerability Intelligence & ETL Platform**
+**Modern Vulnerability Intelligence & ETL Platform**
+
+Integrate, validate, and analyze CVE, EPSS, KEV, NVD, ExploitDB, and more in PostgreSQL with scheduled or on-demand updates.
 
 ExploitPulse is a modern, Dockerized ETL system for downloading, processing, and exploring vulnerability intelligence data from EPSS, CISA KEV, MITRE, NVD, ExploitDB, Vulnrichment, and more—all in PostgreSQL. Built for extensibility, validation, and actionable security analytics.
 
@@ -21,6 +23,9 @@ ExploitPulse is a modern, Dockerized ETL system for downloading, processing, and
 ## Project Status: Independent Development (2025-05)
 
 This repository is now an independent project, maintained and extended by the Nickorlabs team. ExploitPulse is focused on robust, extensible ETL for vulnerability intelligence, with strong validation and a modern, reproducible stack.
+
+**Data Refresh:**
+ExploitPulse supports scheduled (e.g., daily or hourly via cron) or on-demand ETL jobs for all supported vulnerability data sources. True real-time streaming is not currently implemented.
 
 ## Major Update: Python & Docker Migration (2025-05)
 
