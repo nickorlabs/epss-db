@@ -1,0 +1,7 @@
+# Ignore MITRE cvelistV5 data repo
+etl/mitre-cvelistV5/
+# Ignore other temp/large data dirs
+etl/vulnrichment/
+etl/nvd-data/
+etl/epss-data/
+etl/db/

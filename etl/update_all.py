@@ -5,7 +5,8 @@ scripts = [
     "update_epss.py",
     "update_kev.py",
     "update_vulnrich.py",
-    "update_exploitdb.py"
+    "update_exploitdb.py",
+    "update_nvd.py"
 ]
 
 for script in scripts:

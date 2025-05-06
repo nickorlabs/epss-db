@@ -10,10 +10,13 @@ A modern, Dockerized ETL system for downloading, processing, and exploring EPSS,
 - **PostgreSQL** is the supported database (MySQL support is deprecated).
 - **Legacy shell scripts and MySQL configs are archived** in `/archive/`.
 - **Docker Compose** is used for reproducible, multi-service orchestration.
+- **Robust Docker volume mapping** ensures all MITRE/NVD/ExploitDB data is accessible inside containers.
 - **Data sources:**
   - EPSS (Empirical Security)
   - CISA Known Exploited Vulnerabilities (KEV)
   - CISA Vulnrichment
+  - MITRE CVE (full cvelistV5 integration)
+  - NVD CVE (integrated and validated)
   - ExploitDB (Offensive Security Exploit Database)
 - **Extensible:** Easy to add new data sources or analytics.
 
@@ -72,8 +75,15 @@ All old shell scripts and MySQL configs are archived in `/archive/` and are no l
 
 ---
 
+## Data Validation & Integrity
+- **Inline validation**: All MITRE and NVD CVE imports now include inline validation—every record is checked after import to ensure database fields match the original source data.
+- **Integrity-first ETL**: This pattern will be extended to all other feeds (ExploitDB, OSV, Snyk, etc.) for robust, auditable data quality.
+- **Validation mismatches** (if any) are logged with details for rapid debugging.
+
+---
+
 ## Next Steps
-- NVD data integration planned
+- Extend inline validation to all other feeds (ExploitDB, OSV, Snyk, etc.)
 - UI frontend for data exploration (coming soon)
 - See [issues](https://github.com/hogehuga/epss-db/issues) for roadmap
 

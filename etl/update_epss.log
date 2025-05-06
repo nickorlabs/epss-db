@@ -10232,3 +10232,13 @@ LINE 1: SELECT MAX(date) FROM epssdb;
 2025-05-05 02:29:56,907 INFO Importing 277382 rows into PostgreSQL...
 2025-05-05 02:29:57,510 INFO Import complete.
 2025-05-05 02:29:57,514 INFO Auto data import finished.
+2025-05-06 02:41:42,886 INFO Auto data import: 2025-05-05 to 2025-05-06
+2025-05-06 02:41:42,886 INFO Processing 2025-05-05
+2025-05-06 02:41:42,887 INFO Downloading https://epss.empiricalsecurity.com/epss_scores-2025-05-05.csv.gz ...
+2025-05-06 02:41:43,326 INFO Importing 277412 rows into PostgreSQL...
+2025-05-06 02:41:43,990 INFO Import complete.
+2025-05-06 02:41:43,994 INFO Auto data import finished.
+2025-05-06 02:50:49,058 INFO Auto data import: 2025-05-06 to 2025-05-06
+2025-05-06 02:50:49,059 INFO Auto data import finished.
+2025-05-06 04:09:09,885 INFO Auto data import: 2025-05-06 to 2025-05-06
+2025-05-06 04:09:09,885 INFO Auto data import finished.

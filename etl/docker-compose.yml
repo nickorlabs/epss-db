@@ -16,6 +16,7 @@ services:
       dockerfile: Dockerfile.importer
     volumes:
       - ./:/scripts
+      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:ro
     working_dir: /scripts
     depends_on:
       - db
@@ -31,6 +32,7 @@ services:
       dockerfile: Dockerfile.importer
     volumes:
       - ./:/scripts
+      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:ro
       - ../../:/project_root
     working_dir: /project_root
     depends_on:
@@ -48,6 +50,7 @@ services:
       dockerfile: Dockerfile.importer
     volumes:
       - ./:/scripts
+      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:ro
       - ../../:/project_root
     working_dir: /project_root
     depends_on:
@@ -65,6 +68,7 @@ services:
       dockerfile: Dockerfile.importer
     volumes:
       - ./:/scripts
+      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:ro
       - ../../:/project_root
     working_dir: /project_root
     depends_on:
@@ -92,6 +96,7 @@ services:
     image: python:3.11
     volumes:
       - ./:/scripts
+      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:ro
     working_dir: /scripts
     command: bash -c "pip install -r requirements.txt && python exploit_metadata_import.py"
     depends_on:
@@ -106,6 +111,7 @@ services:
     image: python:3.11
     volumes:
       - ./:/scripts
+      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:ro
     working_dir: /scripts
     command: bash -c "pip install -r requirements.txt && python exploit_tags_import.py"
     depends_on:
@@ -122,6 +128,7 @@ services:
     image: python:3.11
     volumes:
       - ./:/scripts
+      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:ro
     working_dir: /scripts
     command: bash -c "pip install -r requirements.txt && python vulnrichment_import.py"
     depends_on:
@@ -139,6 +146,7 @@ services:
       dockerfile: Dockerfile.importer
     volumes:
       - ./:/scripts
+      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:ro
     working_dir: /scripts
     depends_on:
       - db
