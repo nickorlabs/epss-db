@@ -1,0 +1,14 @@
+Ensuring Vulnrichment repo at /scripts/vulnrichment ...
+error: could not lock config file //.gitconfig: Permission denied
+Warning: Could not set git safe.directory: Command '['git', 'config', '--global', '--add', 'safe.directory', '/scripts/vulnrichment']' returned non-zero exit status 255.
+Already up to date.
+Parsing Vulnrichment JSONs in /scripts/vulnrichment ...
+Parsed 91974 records.
+Importing 91974 records into PostgreSQL...
+Vulnrichment import complete.
+
+=== Running /scripts/update_vulnrich.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_vulnrich.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_vulnrich.py with exit code 0 ===

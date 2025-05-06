@@ -1,0 +1,10 @@
+Found 0 MITRE CVE JSON files.
+
+Validation complete. No mismatches found.
+MITRE CVE import complete.
+
+=== Running /scripts/update_mitre.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_mitre.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_mitre.py with exit code 0 ===

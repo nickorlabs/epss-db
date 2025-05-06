@@ -14,6 +14,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.importer
+    user: "${UID}:${GID}"
     volumes:
       - ./:/scripts
       - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:ro

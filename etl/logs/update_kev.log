@@ -1,0 +1,9 @@
+Downloading KEV JSON from https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json ...
+Importing 1333 vulnerabilities into PostgreSQL...
+KEV import complete.
+
+=== Running /scripts/update_kev.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_kev.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_kev.py with exit code 0 ===
