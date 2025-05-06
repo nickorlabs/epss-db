@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="ExploitPulse Logo" width="200"/>
+</p>
+
 # ExploitPulse
 
 **Real-Time Vulnerability Intelligence & ETL Platform**
