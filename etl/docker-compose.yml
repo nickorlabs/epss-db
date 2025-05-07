@@ -1,7 +1,7 @@
-version: '3.8'
 services:
   db:
     image: postgres:16
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -14,7 +14,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.importer
-    user: "${UID}:${GID}"
     volumes:
       - ./:/scripts
       - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:ro
@@ -157,6 +156,7 @@ services:
       PGPASSWORD: postgres
       PGDATABASE: epssdb
     command: ["python", "update_all.py"]
+    # Note: No restart policy for ETL jobs; they should exit after completion.
 
 volumes:
   pgdata:

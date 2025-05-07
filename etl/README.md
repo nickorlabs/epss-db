@@ -7,13 +7,45 @@ This script downloads and imports ExploitDB data into a PostgreSQL database usin
 ### 1. Prerequisites
 - Docker & Docker Compose installed
 
-### 2. Start the Database and Importer
-From the `subprogram/exploits` directory, run:
+### 2. Start the Database
+From the ETL directory, start the database and supporting containers:
 ```bash
-docker-compose up --build
+docker compose up -d db
 ```
-- This will start a PostgreSQL database and a Python importer container.
-- The importer will download, process, and import the ExploitDB CSV into PostgreSQL.
+
+### 3. Run Each ETL Import Individually
+For best results (especially with large datasets), run each ETL update script one at a time. This makes troubleshooting easier and avoids resource contention.
+
+Example commands:
+
+**Exploits:**
+```bash
+docker compose run --rm importer python update_exploitdb.py
+```
+**NVD:**
+```bash
+docker compose run --rm importer python update_nvd.py
+```
+**MITRE:**
+```bash
+docker compose run --rm importer python update_mitre.py
+```
+**EPSS:**
+```bash
+docker compose run --rm importer python update_epss.py
+```
+**KEV:**
+```bash
+docker compose run --rm importer python update_kev.py
+```
+**Vulnrichment:**
+```bash
+docker compose run --rm importer python update_vulnrich.py
+```
+
+Repeat for any other ETL scripts as needed.
+
+> **Note:** Running `update_all.py` is not recommended for large imports or troubleshooting. Run each update individually for best results.
 
 ### 3. Database Access
 - Default database: `epssdb`

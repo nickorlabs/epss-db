@@ -71,25 +71,53 @@ ExploitPulse supports scheduled (e.g., daily or hourly via cron) or on-demand ET
 
 ## Usage
 
-1. **Build and run all ETL jobs:**
-   ```bash
-   cd etl
-   docker-compose build update_all
-   docker-compose run --rm update_all
-   ```
+### 1. Start the Database
+From the `etl` directory, start the database container:
+```bash
+docker compose up -d db
+```
 
-   Or run individual jobs (e.g. EPSS only):
-   ```bash
-   docker-compose run --rm update_epss
-   ```
+### 2. Run Each ETL Import Individually
+For best results (especially with large datasets), run each ETL update script one at a time. This makes troubleshooting easier and avoids resource contention.
 
-2. **Query the data in PostgreSQL:**
-   Use `psql` or any SQL client to explore tables:
-   - `epss` (EPSS scores)
-   - `kevcatalog` (CISA KEV)
-   - `vulnrichment` (Vulnrichment details)
-   - `exploits`, `exploit_tags`, `exploit_metadata` (ExploitDB and related tables)
-   - All tables are in the `exploitpulse` database.
+Example commands:
+
+**Exploits:**
+```bash
+docker compose run --rm importer python update_exploitdb.py
+```
+**NVD:**
+```bash
+docker compose run --rm importer python update_nvd.py
+```
+**MITRE:**
+```bash
+docker compose run --rm importer python update_mitre.py
+```
+**EPSS:**
+```bash
+docker compose run --rm importer python update_epss.py
+```
+**KEV:**
+```bash
+docker compose run --rm importer python update_kev.py
+```
+**Vulnrichment:**
+```bash
+docker compose run --rm importer python update_vulnrich.py
+```
+
+Repeat for any other ETL scripts as needed.
+
+> **Note:** Running `update_all.py` is not recommended for large imports or troubleshooting. Run each update individually for best results.
+
+### 3. Query the data in PostgreSQL
+Use `psql` or any SQL client to explore tables:
+- `epssdb` (EPSS scores)
+- `kevcatalog` (CISA KEV)
+- `vulnrichment` (Vulnrichment details)
+- `exploits`, `exploit_tags`, `exploit_metadata` (ExploitDB and related tables)
+- All tables are in the `epssdb` database by default.
 
 ---
 

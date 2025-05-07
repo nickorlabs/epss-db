@@ -11,7 +11,9 @@ PG_CONFIG = {
     'dbname': os.environ.get('PGDATABASE', 'epssdb'),
 }
 
-MITRE_DIR = os.path.join(os.path.dirname(__file__), 'mitre-cvelistV5', 'cves')
+import subprocess
+MITRE_ROOT = os.path.join(os.path.dirname(__file__), 'mitre-cvelistV5')
+MITRE_DIR = os.path.join(MITRE_ROOT, 'cves')
 
 # Helper to extract CVSS metrics from CNA metrics array
 def extract_cvss(metrics, version):
@@ -179,6 +181,54 @@ def parse_cve_json(path):
 
 def main():
     import psycopg2
+    import subprocess
+    # Ensure MITRE cvelistV5 repo is present and up to date
+    import shutil
+    if not os.path.exists(MITRE_ROOT):
+        print("MITRE cvelistV5 repo not found, cloning...")
+        subprocess.run([
+            'git', 'clone', 'https://github.com/CVEProject/cvelistV5.git', MITRE_ROOT
+        ], check=True)
+    elif not os.path.exists(os.path.join(MITRE_ROOT, '.git')):
+        print("MITRE cvelistV5 directory exists but is not a git repo. Removing and cloning fresh...")
+        shutil.rmtree(MITRE_ROOT)
+        subprocess.run([
+            'git', 'clone', 'https://github.com/CVEProject/cvelistV5.git', MITRE_ROOT
+        ], check=True)
+    else:
+        print("MITRE cvelistV5 repo found and is a git repo, pulling latest updates...")
+        subprocess.run([
+            'git', '-C', MITRE_ROOT, 'pull'
+        ], check=True)
+    # Ensure mitre_cve table exists
+    conn = psycopg2.connect(**PG_CONFIG)
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+CREATE TABLE IF NOT EXISTS mitre_cve (
+    cve_id TEXT PRIMARY KEY,
+    year INT,
+    state TEXT,
+    assigner TEXT,
+    published TEXT,
+    last_modified TEXT,
+    description TEXT,
+    "references" TEXT,
+    cvss2_version TEXT,
+    cvss2_vector TEXT,
+    cvss2_score FLOAT,
+    cvss3_version TEXT,
+    cvss3_vector TEXT,
+    cvss3_score FLOAT,
+    cvss4_version TEXT,
+    cvss4_vector TEXT,
+    cvss4_score FLOAT,
+    json_data TEXT
+);
+""")
+    finally:
+        conn.close()
     pattern = os.path.join(MITRE_DIR, '**', 'CVE-*.json')
     files = glob(pattern, recursive=True)
     print(f"Found {len(files)} MITRE CVE JSON files.")
