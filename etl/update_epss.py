@@ -15,12 +15,20 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)s %(message)s'
 )
 
+def read_secret(secret_path, default=None):
+    try:
+        with open(secret_path, 'r') as f:
+            return f.read().strip()
+    except Exception:
+        return default
+
 PG_CONFIG = {
     'host': os.environ.get('PGHOST', 'db'),
-    'user': os.environ.get('PGUSER', 'postgres'),
-    'password': os.environ.get('PGPASSWORD', 'postgres'),
+    'user': read_secret('/run/secrets/pg_user', os.environ.get('PGUSER', 'postgres')),
+    'password': read_secret('/run/secrets/pg_password', os.environ.get('PGPASSWORD', 'postgres')),
     'dbname': os.environ.get('PGDATABASE', 'epssdb'),
 }
+
 
 EPSS_DATA_DIR = os.path.join(os.path.dirname(__file__), 'epss-data', '3rd')
 EPSS_OUT_DIR = os.path.join(os.path.dirname(__file__), 'epss-data')
