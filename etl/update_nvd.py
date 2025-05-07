@@ -219,6 +219,57 @@ def process_feed(feed_name, existing_last_modified):
             print(f"Upserted {cve_id}")
 
 def main():
+    # Ensure nvd_cve table exists
+    conn = psycopg2.connect(**PG_CONFIG)
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+CREATE TABLE IF NOT EXISTS nvd_cve (
+    cve_id TEXT PRIMARY KEY,
+    published TEXT,
+    last_modified TEXT,
+    description TEXT,
+    cwe TEXT,
+    cvss2_base_score FLOAT,
+    cvss2_vector TEXT,
+    cvss2_av TEXT,
+    cvss2_ac TEXT,
+    cvss2_au TEXT,
+    cvss2_c TEXT,
+    cvss2_i TEXT,
+    cvss2_a TEXT,
+    cvss3_base_score FLOAT,
+    cvss3_vector TEXT,
+    cvss3_av TEXT,
+    cvss3_ac TEXT,
+    cvss3_pr TEXT,
+    cvss3_ui TEXT,
+    cvss3_s TEXT,
+    cvss3_c TEXT,
+    cvss3_i TEXT,
+    cvss3_a TEXT,
+    cvss4_base_score FLOAT,
+    cvss4_vector TEXT,
+    cvss4_av TEXT,
+    cvss4_ac TEXT,
+    cvss4_at TEXT,
+    cvss4_pr TEXT,
+    cvss4_ui TEXT,
+    cvss4_v TEXT,
+    cvss4_c TEXT,
+    cvss4_i TEXT,
+    cvss4_a TEXT,
+    cvss4_s TEXT,
+    cvss4_si TEXT,
+    cvss4_sc TEXT,
+    cvss4_sa TEXT,
+    "references" TEXT,
+    json_data TEXT
+);
+""")
+    finally:
+        conn.close()
     # Get all existing last_modified dates
     existing_last_modified = get_existing_last_modified()
     # Initial load: all years

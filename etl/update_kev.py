@@ -13,28 +13,44 @@ PG_CONFIG = {
 KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 
 CREATE_TABLE_SQL = """
-DROP TABLE IF EXISTS kevcatalog;
-CREATE TABLE kevcatalog (
-    id SERIAL PRIMARY KEY,
-    cveID TEXT,
-    vendorProject TEXT,
-    product TEXT,
-    vulnerabilityName TEXT,
-    dateAdded DATE,
-    shortDescription TEXT,
-    requiredAction TEXT,
-    dueDate DATE,
-    knownRansomwareCampaignUse TEXT,
-    notes TEXT
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'kevcatalog') THEN
+        CREATE TABLE kevcatalog (
+            id SERIAL PRIMARY KEY,
+            cveID TEXT UNIQUE,
+            vendorProject TEXT,
+            product TEXT,
+            vulnerabilityName TEXT,
+            dateAdded DATE,
+            shortDescription TEXT,
+            requiredAction TEXT,
+            dueDate DATE,
+            knownRansomwareCampaignUse TEXT,
+            notes TEXT,
+            last_seen DATE
+        );
+    END IF;
+END$$;
 """
 
-INSERT_SQL = """
+UPSERT_SQL = """
 INSERT INTO kevcatalog (
-    cveID, vendorProject, product, vulnerabilityName, dateAdded, shortDescription, requiredAction, dueDate, knownRansomwareCampaignUse, notes
+    cveID, vendorProject, product, vulnerabilityName, dateAdded, shortDescription, requiredAction, dueDate, knownRansomwareCampaignUse, notes, last_seen
 ) VALUES (
-    %(cveID)s, %(vendorProject)s, %(product)s, %(vulnerabilityName)s, %(dateAdded)s, %(shortDescription)s, %(requiredAction)s, %(dueDate)s, %(knownRansomwareCampaignUse)s, %(notes)s
-);
+    %(cveID)s, %(vendorProject)s, %(product)s, %(vulnerabilityName)s, %(dateAdded)s, %(shortDescription)s, %(requiredAction)s, %(dueDate)s, %(knownRansomwareCampaignUse)s, %(notes)s, %(last_seen)s
+)
+ON CONFLICT (cveID) DO UPDATE SET
+    vendorProject = EXCLUDED.vendorProject,
+    product = EXCLUDED.product,
+    vulnerabilityName = EXCLUDED.vulnerabilityName,
+    dateAdded = EXCLUDED.dateAdded,
+    shortDescription = EXCLUDED.shortDescription,
+    requiredAction = EXCLUDED.requiredAction,
+    dueDate = EXCLUDED.dueDate,
+    knownRansomwareCampaignUse = EXCLUDED.knownRansomwareCampaignUse,
+    notes = EXCLUDED.notes,
+    last_seen = EXCLUDED.last_seen;
 """
 
 def fetch_kev_json():
@@ -44,14 +60,15 @@ def fetch_kev_json():
     return resp.json()
 
 def import_to_postgres(vulns):
-    print(f"Importing {len(vulns)} vulnerabilities into PostgreSQL...")
+    from datetime import date
+    print(f"Importing {len(vulns)} vulnerabilities into PostgreSQL with upsert...")
     conn = psycopg2.connect(**PG_CONFIG)
     try:
         with conn:
             with conn.cursor() as cur:
                 cur.execute(CREATE_TABLE_SQL)
+                today = date.today()
                 for v in vulns:
-                    # Clean up and map fields
                     row = {
                         'cveID': v.get('cveID'),
                         'vendorProject': v.get('vendorProject'),
@@ -63,9 +80,10 @@ def import_to_postgres(vulns):
                         'dueDate': v.get('dueDate'),
                         'knownRansomwareCampaignUse': v.get('knownRansomwareCampaignUse'),
                         'notes': v.get('notes'),
+                        'last_seen': today,
                     }
-                    cur.execute(INSERT_SQL, row)
-        print("KEV import complete.")
+                    cur.execute(UPSERT_SQL, row)
+        print("KEV upsert complete.")
     finally:
         conn.close()
 

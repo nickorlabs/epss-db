@@ -16,16 +16,21 @@ PG_CONFIG = {
 VULNREPO_DIR = os.path.join(os.path.dirname(__file__), 'vulnrichment')  # Now under etl/vulnrichment
 
 CREATE_TABLE_SQL = '''
-CREATE TABLE IF NOT EXISTS vulnrichment (
-    cve TEXT PRIMARY KEY,
-    cvssScore FLOAT,
-    cvssVector TEXT,
-    published DATE,
-    lastModified DATE,
-    summary TEXT,
-    cwe TEXT,
-    "references" TEXT
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'vulnrichment') THEN
+        CREATE TABLE vulnrichment (
+            cve TEXT PRIMARY KEY,
+            cvssScore FLOAT,
+            cvssVector TEXT,
+            published TEXT,
+            lastModified TEXT,
+            summary TEXT,
+            cwe TEXT,
+            "references" TEXT
+        );
+    END IF;
+END$$;
 '''
 
 INSERT_SQL = '''
@@ -95,14 +100,17 @@ def parse_jsons():
     return records
 
 def import_to_postgres(records):
-    print(f"Importing {len(records)} records into PostgreSQL...")
+    print(f"Importing {len(records)} records into PostgreSQL in batches...")
     conn = psycopg2.connect(**PG_CONFIG)
+    batch_size = 1000
     try:
         with conn:
             with conn.cursor() as cur:
                 cur.execute(CREATE_TABLE_SQL)
-                for rec in records:
-                    cur.execute(INSERT_SQL, rec)
+                for i in range(0, len(records), batch_size):
+                    batch = records[i:i+batch_size]
+                    cur.executemany(INSERT_SQL, batch)
+                    print(f"Inserted batch {i//batch_size+1} ({len(batch)} records)")
         print("Vulnrichment import complete.")
     finally:
         conn.close()
