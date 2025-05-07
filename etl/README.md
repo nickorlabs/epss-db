@@ -49,14 +49,14 @@ Repeat for any other ETL scripts as needed.
 
 ### 3. Database Access
 - Default database: `epssdb`
-- Default user/password: `postgres`/`postgres`
+- **Database credentials are now securely stored using Docker secrets** (see `docker-compose.yml`).
 - To access the DB:
   ```bash
-  docker-compose exec db psql -U postgres -d epssdb
+  docker compose exec db psql -U postgres -d epssdb
   ```
 
 ### 4. Customization
-- Edit `exploitdb_import.py` for schema or logic changes.
+- Edit `update_exploitdb.py`, `update_epss.py`, `update_kev.py`, `update_vulnrich.py`, or `update_all.py` for schema or logic changes.
 - Edit `docker-compose.yml` for service config.
 
 ### 5. ML/Vector Support
@@ -66,11 +66,12 @@ Repeat for any other ETL scripts as needed.
 - See `requirements.txt` (uses `psycopg2-binary` for PostgreSQL)
 
 ## Notes
-- The importer script uses the `COPY` command for fast bulk loading.
-- All data is loaded into the `exploits` table.
+- The ETL scripts use the `COPY` command for fast bulk loading.
+- All data is loaded into the appropriate tables (e.g., `exploits`, `epssdb`, `kevcatalog`, etc.).
 
-## Environment Variables
-- `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_HOST`, `MYSQL_DATABASE` (optional, defaults provided in script)
+## Secure Credential Storage
+- Database credentials are managed via Docker secrets (`pg_user`, `pg_password`).
+- No credentials are hardcoded in code or environment variables.
 
 ## Notes
 - The `.venv` directory is the standard convention for Python projects and should be gitignored for cleanliness.
