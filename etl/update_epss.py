@@ -137,7 +137,7 @@ def daterange(start_date, end_date):
 def main():
     last_date = get_last_imported_date()
     start_date = last_date + timedelta(days=1)
-    end_date = datetime.today()
+    end_date = datetime.today() + timedelta(days=1)
     logging.info(f"Auto data import: {start_date.date()} to {end_date.date()}")
     for d in daterange(start_date, end_date):
         date_str = d.strftime('%Y-%m-%d')

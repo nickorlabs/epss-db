@@ -4,6 +4,12 @@ import json
 import psycopg2
 from glob import glob
 from datetime import datetime
+import logging
+
+# Set up logging based on environment
+ENV = os.environ.get('ENV', 'development').lower()
+LOG_LEVEL = logging.INFO if ENV == 'production' else logging.DEBUG
+logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(levelname)s %(message)s')
 
 def read_secret(secret_path, default=None):
     try:
@@ -58,26 +64,35 @@ ON CONFLICT (cve) DO UPDATE SET
 '''
 
 def update_repo():
-    print(f"Ensuring Vulnrichment repo at {VULNREPO_DIR} ...")
+    logging.info(f"Ensuring Vulnrichment repo at {VULNREPO_DIR} ...")
     if not os.path.isdir(VULNREPO_DIR):
-        print("Repo not found, cloning...")
+        logging.info("Repo not found, cloning...")
         try:
             subprocess.run(["git", "clone", "https://github.com/cisagov/vulnrichment", VULNREPO_DIR], check=True)
         except Exception as e:
-            print(f"Error: Could not clone Vulnrichment repo: {e}")
+            if ENV == 'production':
+                logging.error("Could not clone Vulnrichment repo.")
+            else:
+                logging.error(f"Error: Could not clone Vulnrichment repo: {e}", exc_info=True)
             return
     # Set git safe.directory to avoid ownership errors
     try:
         subprocess.run(["git", "config", "--global", "--add", "safe.directory", VULNREPO_DIR], check=True)
     except Exception as e:
-        print(f"Warning: Could not set git safe.directory: {e}")
+        if ENV == 'production':
+            logging.warning("Could not set git safe.directory.")
+        else:
+            logging.warning(f"Warning: Could not set git safe.directory: {e}", exc_info=True)
     try:
         subprocess.run(["git", "pull"], cwd=VULNREPO_DIR, check=True)
     except Exception as e:
-        print(f"Warning: Could not update Vulnrichment repo: {e}")
+        if ENV == 'production':
+            logging.warning("Could not update Vulnrichment repo.")
+        else:
+            logging.warning(f"Warning: Could not update Vulnrichment repo: {e}", exc_info=True)
 
 def parse_jsons():
-    print(f"Parsing Vulnrichment JSONs in {VULNREPO_DIR} ...")
+    logging.info(f"Parsing Vulnrichment JSONs in {VULNREPO_DIR} ...")
     records = []
     for json_file in glob(os.path.join(VULNREPO_DIR, "**", "*.json"), recursive=True):
         with open(json_file, "r", encoding="utf-8") as f:
@@ -103,12 +118,15 @@ def parse_jsons():
                 }
                 records.append(record)
             except Exception as e:
-                print(f"Failed to parse {json_file}: {e}")
-    print(f"Parsed {len(records)} records.")
+                if ENV == 'production':
+                    logging.warning(f"Failed to parse {json_file}")
+                else:
+                    logging.warning(f"Failed to parse {json_file}: {e}", exc_info=True)
+    logging.info(f"Parsed {len(records)} records.")
     return records
 
 def import_to_postgres(records):
-    print(f"Importing {len(records)} records into PostgreSQL in batches...")
+    logging.info(f"Importing {len(records)} records into PostgreSQL in batches...")
     conn = psycopg2.connect(**PG_CONFIG)
     batch_size = 1000
     try:
@@ -118,8 +136,8 @@ def import_to_postgres(records):
                 for i in range(0, len(records), batch_size):
                     batch = records[i:i+batch_size]
                     cur.executemany(INSERT_SQL, batch)
-                    print(f"Inserted batch {i//batch_size+1} ({len(batch)} records)")
-        print("Vulnrichment import complete.")
+                    logging.info(f"Inserted batch {i//batch_size+1} ({len(batch)} records)")
+        logging.info("Vulnrichment import complete.")
     finally:
         conn.close()
 
@@ -127,7 +145,7 @@ def main():
     update_repo()
     records = parse_jsons()
     if not records:
-        print("No records to import!")
+        logging.warning("No records to import!")
         return
     import_to_postgres(records)
 

@@ -49,7 +49,8 @@ def download_feed(feed_name):
     url = f"{NVD_FEED_URL}{feed_name}.json.gz"
     gz_path = os.path.join(NVD_DATA_DIR, f"{feed_name}.json.gz")
     json_path = os.path.join(NVD_DATA_DIR, f"{feed_name}.json")
-    if not os.path.exists(gz_path):
+    always_update = feed_name in ["nvdcve-1.1-recent", "nvdcve-1.1-modified"]
+    if always_update or not os.path.exists(gz_path):
         print(f"Downloading {url} ...")
         resp = requests.get(url, stream=True)
         if resp.status_code == 200:
@@ -58,7 +59,7 @@ def download_feed(feed_name):
         else:
             print(f"Failed to download {url}")
             return None
-    if not os.path.exists(json_path):
+    if always_update or not os.path.exists(json_path):
         with gzip.open(gz_path, 'rb') as f_in, open(json_path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
     return json_path

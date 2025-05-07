@@ -2,6 +2,12 @@ import os
 import requests
 import psycopg2
 import json
+import logging
+
+# Set up logging based on environment
+ENV = os.environ.get('ENV', 'development').lower()
+LOG_LEVEL = logging.INFO if ENV == 'production' else logging.DEBUG
+logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(levelname)s %(message)s')
 
 def read_secret(secret_path, default=None):
     try:
@@ -62,16 +68,17 @@ ON CONFLICT (cveID) DO UPDATE SET
 """
 
 def fetch_kev_json():
-    print(f"Downloading KEV JSON from {KEV_URL} ...")
+    logging.info(f"Downloading KEV JSON from {KEV_URL} ...")
     resp = requests.get(KEV_URL)
     resp.raise_for_status()
     return resp.json()
 
 def import_to_postgres(vulns):
     from datetime import date
-    print(f"Importing {len(vulns)} vulnerabilities into PostgreSQL with upsert...")
-    conn = psycopg2.connect(**PG_CONFIG)
+    logging.info(f"Importing {len(vulns)} vulnerabilities into PostgreSQL with upsert...")
+    conn = None
     try:
+        conn = psycopg2.connect(**PG_CONFIG)
         with conn:
             with conn.cursor() as cur:
                 cur.execute(CREATE_TABLE_SQL)
@@ -91,15 +98,23 @@ def import_to_postgres(vulns):
                         'last_seen': today,
                     }
                     cur.execute(UPSERT_SQL, row)
-        print("KEV upsert complete.")
+        logging.info("KEV upsert complete.")
+    except Exception as e:
+        if ENV == 'production':
+            logging.error("Error importing vulnerabilities into PostgreSQL.")
+        else:
+            logging.error(f"Error importing vulnerabilities into PostgreSQL: {e}", exc_info=True)
+        if conn:
+            conn.rollback()
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 def main():
     data = fetch_kev_json()
     vulns = data.get('vulnerabilities', [])
     if not vulns:
-        print("No vulnerabilities found in KEV JSON!")
+        logging.warning("No vulnerabilities found in KEV JSON!")
         return
     import_to_postgres(vulns)
 

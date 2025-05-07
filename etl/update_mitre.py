@@ -3,6 +3,12 @@ import json
 import psycopg2
 from datetime import datetime
 from glob import glob
+import logging
+
+# Set up logging based on environment
+ENV = os.environ.get('ENV', 'development').lower()
+LOG_LEVEL = logging.INFO if ENV == 'production' else logging.DEBUG
+logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(levelname)s %(message)s')
 
 def read_secret(secret_path, default):
     try:
@@ -192,18 +198,18 @@ def main():
     # Ensure MITRE cvelistV5 repo is present and up to date
     import shutil
     if not os.path.exists(MITRE_ROOT):
-        print("MITRE cvelistV5 repo not found, cloning...")
+        logging.info("MITRE cvelistV5 repo not found, cloning...")
         subprocess.run([
             'git', 'clone', 'https://github.com/CVEProject/cvelistV5.git', MITRE_ROOT
         ], check=True)
     elif not os.path.exists(os.path.join(MITRE_ROOT, '.git')):
-        print("MITRE cvelistV5 directory exists but is not a git repo. Removing and cloning fresh...")
+        logging.info("MITRE cvelistV5 directory exists but is not a git repo. Removing and cloning fresh...")
         shutil.rmtree(MITRE_ROOT)
         subprocess.run([
             'git', 'clone', 'https://github.com/CVEProject/cvelistV5.git', MITRE_ROOT
         ], check=True)
     else:
-        print("MITRE cvelistV5 repo found and is a git repo, pulling latest updates...")
+        logging.info("MITRE cvelistV5 repo found and is a git repo, pulling latest updates...")
         subprocess.run([
             'git', '-C', MITRE_ROOT, 'pull'
         ], check=True)
@@ -238,7 +244,7 @@ CREATE TABLE IF NOT EXISTS mitre_cve (
         conn.close()
     pattern = os.path.join(MITRE_DIR, '**', 'CVE-*.json')
     files = glob(pattern, recursive=True)
-    print(f"Found {len(files)} MITRE CVE JSON files.")
+    logging.info(f"Found {len(files)} MITRE CVE JSON files.")
     mismatches = []
     for i, path in enumerate(files):
         record = parse_cve_json(path)
@@ -269,28 +275,31 @@ CREATE TABLE IF NOT EXISTS mitre_cve (
                                     continue
                                 if val_db is None or val_rec is None:
                                     mismatches.append((record['cve_id'], k, val_rec, val_db))
-                                    print(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
+                                    logging.warning(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
                                     continue
                                 if float(val_db) != float(val_rec):
                                     mismatches.append((record['cve_id'], k, val_rec, val_db))
-                                    print(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
+                                    logging.warning(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
                             except Exception:
                                 if str(val_db) != str(val_rec):
                                     mismatches.append((record['cve_id'], k, val_rec, val_db))
-                                    print(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
+                                    logging.warning(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
                         else:
                             if str(val_db) != str(val_rec):
                                 mismatches.append((record['cve_id'], k, val_rec, val_db))
-                                print(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
+                                logging.warning(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
         except Exception as e:
-            print(f"Validation error for {record['cve_id']}: {e}")
+            if ENV == 'production':
+                logging.error(f"Validation error for {record['cve_id']}")
+            else:
+                logging.error(f"Validation error for {record['cve_id']}: {e}", exc_info=True)
         if (i+1) % 1000 == 0:
-            print(f"Upserted {i+1} records...")
+            logging.info(f"Upserted {i+1} records...")
     if mismatches:
-        print(f"\nValidation complete. {len(mismatches)} mismatches found.")
+        logging.warning(f"Validation complete. {len(mismatches)} mismatches found.")
     else:
-        print("\nValidation complete. No mismatches found.")
-    print("MITRE CVE import complete.")
+        logging.info("Validation complete. No mismatches found.")
+    logging.info("MITRE CVE import complete.")
 
 if __name__ == "__main__":
     main()
