@@ -25,6 +25,8 @@ PG_CONFIG = {
 }
 
 import subprocess
+# Ensure git does not fail due to dubious ownership in Docker/CI
+subprocess.run(["git", "config", "--global", "--add", "safe.directory", "/scripts/mitre-cvelistV5"], check=True)
 MITRE_ROOT = os.path.join(os.path.dirname(__file__), 'mitre-cvelistV5')
 MITRE_DIR = os.path.join(MITRE_ROOT, 'cves')
 

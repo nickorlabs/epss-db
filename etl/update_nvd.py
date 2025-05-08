@@ -7,6 +7,18 @@ import json
 import psycopg2
 from datetime import datetime
 from glob import glob
+import logging
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+# Set up logging based on environment
+ENV = os.environ.get('ENV', 'development').lower()
+LOG_LEVEL = logging.INFO if ENV == 'production' else logging.DEBUG
+logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s %(levelname)s %(message)s')
+
+# Retry/backoff configuration from environment
+NVD_RETRY_ATTEMPTS = int(os.environ.get('NVD_RETRY_ATTEMPTS', 5))
+NVD_RETRY_WAIT_MIN = int(os.environ.get('NVD_RETRY_WAIT_MIN', 2))  # seconds
+NVD_RETRY_WAIT_MAX = int(os.environ.get('NVD_RETRY_WAIT_MAX', 30))  # seconds
 
 def read_secret(secret_path, default=None):
     try:
@@ -45,24 +57,47 @@ def parse_cvss_vector(vector):
         result[k.lower()] = v
     return result
 
+@retry(
+    stop=stop_after_attempt(NVD_RETRY_ATTEMPTS),
+    wait=wait_exponential(min=NVD_RETRY_WAIT_MIN, max=NVD_RETRY_WAIT_MAX),
+    retry=retry_if_exception_type((requests.RequestException,)),
+    reraise=True
+)
+def _download_feed_with_retry(url, gz_path):
+    try:
+        resp = requests.get(url, stream=True, timeout=60)
+        if resp.status_code == 200:
+            with open(gz_path, 'wb') as f:
+                f.write(resp.content)
+            logging.info(f"Downloaded {url} to {gz_path}")
+        else:
+            logging.warning(f"Failed to download {url}, status {resp.status_code}")
+            raise requests.RequestException(f"Failed to download {url}, status {resp.status_code}")
+    except Exception as e:
+        logging.error(f"Exception during download from {url}: {e}")
+        raise
+
 def download_feed(feed_name):
     url = f"{NVD_FEED_URL}{feed_name}.json.gz"
     gz_path = os.path.join(NVD_DATA_DIR, f"{feed_name}.json.gz")
     json_path = os.path.join(NVD_DATA_DIR, f"{feed_name}.json")
     always_update = feed_name in ["nvdcve-1.1-recent", "nvdcve-1.1-modified"]
-    if always_update or not os.path.exists(gz_path):
-        print(f"Downloading {url} ...")
-        resp = requests.get(url, stream=True)
-        if resp.status_code == 200:
-            with open(gz_path, 'wb') as f:
-                f.write(resp.content)
-        else:
-            print(f"Failed to download {url}")
-            return None
-    if always_update or not os.path.exists(json_path):
-        with gzip.open(gz_path, 'rb') as f_in, open(json_path, 'wb') as f_out:
-            shutil.copyfileobj(f_in, f_out)
-    return json_path
+    try:
+        if always_update or not os.path.exists(gz_path):
+            logging.info(f"Downloading {feed_name} feed from NVD...")
+            _download_feed_with_retry(url, gz_path)
+        if always_update or not os.path.exists(json_path):
+            try:
+                with gzip.open(gz_path, 'rb') as f_in, open(json_path, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+                logging.info(f"Extracted {gz_path} to {json_path}")
+            except Exception as e:
+                logging.error(f"Failed to extract {gz_path}: {e}")
+                return None
+        return json_path
+    except Exception as e:
+        logging.error(f"Failed to download/extract feed {feed_name}: {e}")
+        return None
 
 def load_json(json_path):
     with open(json_path, 'r', encoding='utf-8') as f:
@@ -225,7 +260,7 @@ def process_feed(feed_name, existing_last_modified):
         last_mod = record['last_modified']
         if (cve_id not in existing_last_modified) or (last_mod and last_mod > str(existing_last_modified[cve_id])):
             upsert_cve(record)
-            print(f"Upserted {cve_id}")
+            logging.info(f"Upserted {cve_id}")
 
 def main():
     # Ensure nvd_cve table exists
@@ -287,7 +322,7 @@ CREATE TABLE IF NOT EXISTS nvd_cve (
     # Incremental: recent and modified
     for feed in ["nvdcve-1.1-recent", "nvdcve-1.1-modified"]:
         process_feed(feed, existing_last_modified)
-    print("NVD import complete.")
+    logging.info("NVD import complete.")
 
 if __name__ == "__main__":
     main()
