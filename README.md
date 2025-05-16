@@ -27,21 +27,23 @@ This repository is now an independent project, maintained and extended by the Ni
 **Data Refresh:**
 ExploitPulse supports scheduled (e.g., daily or hourly via cron) or on-demand ETL jobs for all supported vulnerability data sources. True real-time streaming is not currently implemented.
 
-## Major Update: Python & Docker Migration (2025-05)
+---
 
-- **All data import and ETL workflows are now implemented in Python.**
-- **PostgreSQL** is the supported database (MySQL support is deprecated).
-- **Legacy shell scripts and MySQL configs are archived** in `/archive/`.
-- **Docker Compose** is used for reproducible, multi-service orchestration.
-- **Robust Docker volume mapping** ensures all MITRE/NVD/ExploitDB data is accessible inside containers.
-- **Data sources:**
-  - EPSS (Empirical Security)
-  - CISA Known Exploited Vulnerabilities (KEV)
-  - CISA Vulnrichment
-  - MITRE CVE (full cvelistV5 integration)
-  - NVD CVE (integrated and validated)
-  - ExploitDB (Offensive Security Exploit Database)
-- **Extensible:** Easy to add new data sources or analytics.
+## Secret Management & Security
+- **Secrets, API keys, and passwords must never be committed to the repository.**
+- All sensitive values are managed via Docker secrets or environment variables.
+- The `.gitignore` file enforces exclusion of secrets and log files from version control.
+- This ensures project security and compliance with best practices for open-source and enterprise development.
+
+## Log File Handling
+- All log files are excluded from version control via `.gitignore`.
+- This prevents accidental commits of large files and keeps the repository clean and efficient.
+
+## Major ETL Features & Best Practices
+- All ETL scripts (MITRE, NVD, KEV, EPSS, Vulnrichment, ExploitDB) are implemented in Python for maintainability and performance.
+- Features include parallel processing, batch upserts, robust retry logic, and detailed logging.
+- Each ETL job should be run individually for best results and troubleshooting.
+- Legacy shell scripts and MySQL support are archived and no longer maintained.
 
 ---
 
@@ -78,34 +80,62 @@ docker compose up -d db
 ```
 
 ### 2. Run Each ETL Import Individually
-For best results (especially with large datasets), run each ETL update script one at a time. This makes troubleshooting easier and avoids resource contention.
+For best results, run each ETL update script one at a time. This makes troubleshooting easier and avoids resource contention.
 
-Example commands:
+Below are all supported command-line options for each ETL job, with recommended defaults and example commands:
 
-**Exploits:**
+#### **MITRE ETL (`update_mitre.py`)
+- `--mode` (`full` or `incremental`, default: `incremental`): Import all CVEs or only new/changed ones.
+- `--workers` (default: 4): Number of parallel worker processes.
+- `--batch-size` (default: 100): Batch size for DB upserts.
+- `--verbosity` (0-3, default: 1): Verbosity level for logs.
+
+**Example:**
 ```bash
-docker compose run --rm importer python update_exploitdb.py
+docker compose run --rm mitre_importer python /scripts/update_mitre.py --mode incremental --workers 4 --batch-size 100 --verbosity 1
 ```
-**NVD:**
+
+#### **NVD ETL (`update_nvd.py`)
+- `--mode` (`full` or `incremental`, default: `incremental`): Import all or only new/updated CVEs.
+- `--workers` (default: 4): Number of parallel workers for fetching.
+- `--batch-size` (default: 2000): Batch size for API and DB operations.
+
+**Example:**
 ```bash
-docker compose run --rm importer python update_nvd.py
+docker compose run --rm nvd_importer python /scripts/update_nvd.py --mode incremental --workers 4 --batch-size 2000
 ```
-**MITRE:**
+
+#### **KEV ETL (`update_kev.py`)
+- No command-line switches. Simply run:
 ```bash
-docker compose run --rm importer python update_mitre.py
+docker compose run --rm kev_importer python /scripts/update_kev.py
 ```
-**EPSS:**
+
+#### **EPSS ETL (`update_epss.py`)
+- `--mode` (`full` or `incremental`, default: `incremental`): Import all EPSS data or only new data.
+
+**Example:**
 ```bash
-docker compose run --rm importer python update_epss.py
+docker compose run --rm epss_importer python /scripts/update_epss.py --mode incremental
 ```
-**KEV:**
+
+#### **Vulnrichment ETL (`update_vulnrich.py`)
+- `--mode` (`incremental` or `full`, default: `incremental`): Import only new/changed or all records.
+- `--workers` (default: 4): Number of parallel worker threads.
+- `--batch-size` (default: 1000): Batch size for DB upserts.
+
+**Example:**
 ```bash
-docker compose run --rm importer python update_kev.py
+docker compose run --rm vulnrich_importer python /scripts/update_vulnrich.py --mode incremental --workers 4 --batch-size 1000
 ```
-**Vulnrichment:**
+
+#### **ExploitDB ETL (`update_exploitdb.py`)
+- No command-line switches. Simply run:
 ```bash
-docker compose run --rm importer python update_vulnrich.py
+docker compose run --rm exploitdb_importer python /scripts/update_exploitdb.py
 ```
+
+> **Note:** Use `--mode full` for a full re-import if needed. The default is usually incremental for scripts that support it.
 
 Repeat for any other ETL scripts as needed.
 
