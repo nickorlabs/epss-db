@@ -4,3 +4,9 @@ etl/vulnrichment/
 etl/nvd-data/
 etl/epss-data/
 etl/exploitdb-data/
+
+# Ignore log files
+etl/logs/*.log
+
+# Ignore secrets
+etl/secrets/*
