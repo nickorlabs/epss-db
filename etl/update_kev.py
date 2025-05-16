@@ -42,17 +42,26 @@ BEGIN
             dueDate DATE,
             knownRansomwareCampaignUse TEXT,
             notes TEXT,
-            last_seen DATE
+            last_seen DATE,
+            status TEXT DEFAULT 'active',
+            removed_at DATE
         );
     END IF;
+    -- Add new columns if missing (idempotent)
+    BEGIN
+        ALTER TABLE kevcatalog ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+    EXCEPTION WHEN duplicate_column THEN END;
+    BEGIN
+        ALTER TABLE kevcatalog ADD COLUMN IF NOT EXISTS removed_at DATE;
+    EXCEPTION WHEN duplicate_column THEN END;
 END$$;
 """
 
 UPSERT_SQL = """
 INSERT INTO kevcatalog (
-    cveID, vendorProject, product, vulnerabilityName, dateAdded, shortDescription, requiredAction, dueDate, knownRansomwareCampaignUse, notes, last_seen
+    cveID, vendorProject, product, vulnerabilityName, dateAdded, shortDescription, requiredAction, dueDate, knownRansomwareCampaignUse, notes, last_seen, status, removed_at
 ) VALUES (
-    %(cveID)s, %(vendorProject)s, %(product)s, %(vulnerabilityName)s, %(dateAdded)s, %(shortDescription)s, %(requiredAction)s, %(dueDate)s, %(knownRansomwareCampaignUse)s, %(notes)s, %(last_seen)s
+    %(cveID)s, %(vendorProject)s, %(product)s, %(vulnerabilityName)s, %(dateAdded)s, %(shortDescription)s, %(requiredAction)s, %(dueDate)s, %(knownRansomwareCampaignUse)s, %(notes)s, %(last_seen)s, 'active', NULL
 )
 ON CONFLICT (cveID) DO UPDATE SET
     vendorProject = EXCLUDED.vendorProject,
@@ -64,7 +73,9 @@ ON CONFLICT (cveID) DO UPDATE SET
     dueDate = EXCLUDED.dueDate,
     knownRansomwareCampaignUse = EXCLUDED.knownRansomwareCampaignUse,
     notes = EXCLUDED.notes,
-    last_seen = EXCLUDED.last_seen;
+    last_seen = EXCLUDED.last_seen,
+    status = 'active',
+    removed_at = NULL;
 """
 
 def fetch_kev_json():
@@ -72,6 +83,8 @@ def fetch_kev_json():
     resp = requests.get(KEV_URL)
     resp.raise_for_status()
     return resp.json()
+
+from cve_utils import ensure_cve_exists
 
 def import_to_postgres(vulns):
     from datetime import date
@@ -83,9 +96,13 @@ def import_to_postgres(vulns):
             with conn.cursor() as cur:
                 cur.execute(CREATE_TABLE_SQL)
                 today = date.today()
+                kev_cveids = set()
                 for v in vulns:
+                    cve_id = v.get('cveID')
+                    kev_cveids.add(cve_id)
+                    ensure_cve_exists(conn, cve_id, source='kev')
                     row = {
-                        'cveID': v.get('cveID'),
+                        'cveID': cve_id,
                         'vendorProject': v.get('vendorProject'),
                         'product': v.get('product'),
                         'vulnerabilityName': v.get('vulnerabilityName'),
@@ -98,6 +115,16 @@ def import_to_postgres(vulns):
                         'last_seen': today,
                     }
                     cur.execute(UPSERT_SQL, row)
+                # Mark removed CVEs
+                cur.execute("SELECT cveID FROM kevcatalog WHERE status = 'active'")
+                db_active = set(row[0] for row in cur.fetchall())
+                removed = db_active - kev_cveids
+                if removed:
+                    cur.execute(
+                        "UPDATE kevcatalog SET status = 'removed', removed_at = %s WHERE cveID = ANY(%s)",
+                        (today, list(removed))
+                    )
+                    logging.info(f"Marked {len(removed)} CVEs as removed from KEV.")
         logging.info("KEV upsert complete.")
     except Exception as e:
         if ENV == 'production':

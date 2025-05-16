@@ -5,6 +5,10 @@ import psycopg2
 from glob import glob
 from datetime import datetime
 import logging
+from cve_utils import ensure_cve_exists
+import concurrent.futures
+import time
+import argparse
 
 # Set up logging based on environment
 ENV = os.environ.get('ENV', 'development').lower()
@@ -91,17 +95,31 @@ def update_repo():
         else:
             logging.warning(f"Warning: Could not update Vulnrichment repo: {e}", exc_info=True)
 
-def parse_jsons():
-    logging.info(f"Parsing Vulnrichment JSONs in {VULNREPO_DIR} ...")
+def get_latest_commit():
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=VULNREPO_DIR).decode().strip()
+
+def get_changed_files(last_commit, current_commit):
+    output = subprocess.check_output(['git', 'diff', '--name-only', f'{last_commit}', f'{current_commit}'], cwd=VULNREPO_DIR)
+    return [os.path.join(VULNREPO_DIR, f) for f in output.decode().splitlines() if f.endswith('.json') and 'CVE-' in f]
+
+def get_all_cve_jsons():
+    files = []
+    for root, dirs, filelist in os.walk(VULNREPO_DIR):
+        for file in filelist:
+            if file.startswith('CVE-') and file.endswith('.json'):
+                files.append(os.path.join(root, file))
+    return files
+
+def parse_jsons(json_files):
+    logging.info(f"Parsing {len(json_files)} Vulnrichment JSONs ...")
     records = []
-    for json_file in glob(os.path.join(VULNREPO_DIR, "**", "*.json"), recursive=True):
+    for json_file in json_files:
         with open(json_file, "r", encoding="utf-8") as f:
             try:
                 data = json.load(f)
                 cve_id = data.get('cveMetadata', {}).get('cveId')
                 if not cve_id:
                     continue
-                # Try to extract fields from the most common locations
                 adp = None
                 containers = data.get('containers', {})
                 if 'adp' in containers and isinstance(containers['adp'], list) and containers['adp']:
@@ -125,29 +143,129 @@ def parse_jsons():
     logging.info(f"Parsed {len(records)} records.")
     return records
 
-def import_to_postgres(records):
-    logging.info(f"Importing {len(records)} records into PostgreSQL in batches...")
+
+def import_to_postgres(records, batch_size=1000, max_retries=3):
+    # Ensure all CVEs in records are present in canonical table
     conn = psycopg2.connect(**PG_CONFIG)
-    batch_size = 1000
+    try:
+        with conn:
+            for record in records:
+                ensure_cve_exists(conn, record.get('cve'), source='vulnrichment')
+    finally:
+        conn.close()
+
+    logging.info(f"Importing {len(records)} records into PostgreSQL in batches of {batch_size}...")
+    conn = psycopg2.connect(**PG_CONFIG)
     try:
         with conn:
             with conn.cursor() as cur:
                 cur.execute(CREATE_TABLE_SQL)
                 for i in range(0, len(records), batch_size):
                     batch = records[i:i+batch_size]
-                    cur.executemany(INSERT_SQL, batch)
-                    logging.info(f"Inserted batch {i//batch_size+1} ({len(batch)} records)")
+                    for attempt in range(max_retries):
+                        try:
+                            cur.executemany(INSERT_SQL, batch)
+                            logging.info(f"Inserted batch {i//batch_size+1} ({len(batch)} records)")
+                            break
+                        except Exception as e:
+                            logging.error(f"Error inserting batch {i//batch_size+1}: {e}")
+                            if attempt < max_retries-1:
+                                sleep_time = 2 ** attempt
+                                logging.info(f"Retrying batch {i//batch_size+1} in {sleep_time}s...")
+                                time.sleep(sleep_time)
+                            else:
+                                logging.error(f"Batch {i//batch_size+1} failed after {max_retries} attempts.")
         logging.info("Vulnrichment import complete.")
     finally:
         conn.close()
 
+import argparse
+
+def process_json_file(json_file):
+    try:
+        with open(json_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        cve_id = data.get('cveMetadata', {}).get('cveId')
+        if not cve_id:
+            return None
+        adp = None
+        containers = data.get('containers', {})
+        if 'adp' in containers and isinstance(containers['adp'], list) and containers['adp']:
+            adp = containers['adp'][0]
+        record = {
+            'cve': cve_id,
+            'cvssScore': adp.get('cvssV3', {}).get('baseScore') if adp and 'cvssV3' in adp else None,
+            'cvssVector': adp.get('cvssV3', {}).get('vectorString') if adp and 'cvssV3' in adp else None,
+            'published': data.get('cveMetadata', {}).get('datePublished'),
+            'lastModified': data.get('cveMetadata', {}).get('dateUpdated'),
+            'summary': adp.get('description') if adp else None,
+            'cwe': adp.get('cwe') if adp and 'cwe' in adp else None,
+            'references': ",".join([ref.get('url') for ref in adp.get('references', []) if 'url' in ref]) if adp and 'references' in adp else None
+        }
+        return record
+    except Exception as e:
+        logging.warning(f"Failed to parse {json_file}: {e}", exc_info=True)
+        return None
+
 def main():
     update_repo()
-    records = parse_jsons()
+    parser = argparse.ArgumentParser(description="Vulnrichment ETL: Choose mode (incremental/full)")
+    parser.add_argument('--mode', choices=['incremental', 'full'], default='incremental', help="Import mode: incremental (default) or full")
+    parser.add_argument('--workers', type=int, default=int(os.environ.get('VULN_WORKERS', 4)), help="Number of parallel worker threads (default: 4)")
+    parser.add_argument('--batch-size', type=int, default=int(os.environ.get('VULN_BATCH_SIZE', 1000)), help="Batch size for DB upserts (default: 1000)")
+    parser.add_argument('--verbosity', type=int, default=2, help="Verbosity: 1=WARNING, 2=INFO, 3=DEBUG")
+    args = parser.parse_args()
+
+    # Set logging level per CLI
+    if args.verbosity == 1:
+        logging.getLogger().setLevel(logging.WARNING)
+    elif args.verbosity == 2:
+        logging.getLogger().setLevel(logging.INFO)
+    elif args.verbosity >= 3:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    LAST_COMMIT_FILE = os.path.join(VULNREPO_DIR, '.last_import_commit')
+    current_commit = get_latest_commit()
+    last_commit = None
+    if os.path.exists(LAST_COMMIT_FILE):
+        with open(LAST_COMMIT_FILE, 'r') as f:
+            last_commit = f.read().strip()
+
+    if args.mode == 'full' or not last_commit:
+        logging.info("Performing full import of Vulnrichment JSONs...")
+        json_files = get_all_cve_jsons()
+    else:
+        logging.info(f"Performing incremental import: {last_commit} -> {current_commit}")
+        changed_files = get_changed_files(last_commit, current_commit)
+        if not changed_files:
+            logging.info("No changed JSON files to import.")
+            # Still update the commit file
+            with open(LAST_COMMIT_FILE, 'w') as f:
+                f.write(current_commit)
+            return
+        json_files = changed_files
+
+    # Parallel parse
+    records = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
+        future_to_json = {executor.submit(process_json_file, jf): jf for jf in json_files}
+        for future in concurrent.futures.as_completed(future_to_json):
+            record = future.result()
+            if record:
+                records.append(record)
+    logging.info(f"Parsed {len(records)} records.")
+
     if not records:
         logging.warning("No records to import!")
+        # Still update the commit file
+        with open(LAST_COMMIT_FILE, 'w') as f:
+            f.write(current_commit)
         return
-    import_to_postgres(records)
+    import_to_postgres(records, batch_size=args.batch_size)
+    # Update commit file after successful import
+    with open(LAST_COMMIT_FILE, 'w') as f:
+        f.write(current_commit)
+
 
 if __name__ == "__main__":
     main()

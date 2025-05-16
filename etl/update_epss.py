@@ -6,13 +6,17 @@ import shutil
 import csv
 import psycopg2
 import logging
+from cve_utils import ensure_cve_exists
 from datetime import datetime, timedelta
 
-# Set up logging
+# Set up logging to both file and console
 logging.basicConfig(
-    filename='update_epss.log',
     level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(message)s'
+    format='%(asctime)s %(levelname)s %(message)s',
+    handlers=[
+        logging.FileHandler('update_epss.log'),
+        logging.StreamHandler(sys.stdout)
+    ]
 )
 
 def read_secret(secret_path, default=None):
@@ -43,7 +47,7 @@ def get_last_imported_date():
     try:
         conn = psycopg2.connect(**PG_CONFIG)
         cur = conn.cursor()
-        cur.execute("SELECT MAX(date) FROM epssdb;")
+        cur.execute("SELECT MAX(publish_date) FROM epssdb;")
         row = cur.fetchone()
         if row and row[0]:
             return datetime.strptime(str(row[0]), '%Y-%m-%d')
@@ -77,24 +81,47 @@ def download_and_extract(date):
         shutil.copyfileobj(f_in, f_out)
     return csv_file
 
-def preprocess_csv(csv_file, date):
-    # Read the model version from the header
+def preprocess_csv(csv_file, default_date):
+    """
+    Parse an EPSS CSV file, extracting model_version and publish_date from the header comment.
+    Attach both to every row for storage.
+    """
     model_version = None
+    publish_date = None
     processed_rows = []
     with open(csv_file, 'r', encoding='utf-8') as f:
         for line in f:
-            if line.startswith('#model_version:'):
-                model_version = line.strip().split(':')[1].split(',')[0]
-            elif line.startswith('cve,epss,percentile') or line.startswith('#'):
+            if line.startswith('#'):
+                # Look for model_version and publish_date in the comment
+                if 'model_version' in line and 'publish_date' in line:
+                    # Example: # model_version: v2023.03.01, publish_date: 2023-03-07
+                    parts = line.strip('#').strip().split(',')
+                    for part in parts:
+                        if 'model_version' in part:
+                            model_version = part.split(':')[1].strip()
+                        if 'publish_date' in part:
+                            publish_date = part.split(':')[1].strip()
                 continue
-            else:
-                row = line.strip().split(',')
-                if len(row) == 3:
-                    cve, epss, percentile = row
-                    processed_rows.append([cve, epss, percentile, model_version, date])
+            if line.startswith('cve,epss,percentile'):
+                continue
+            row = line.strip().split(',')
+            if len(row) == 3:
+                cve, epss, percentile = row
+                # Use publish_date from header if present, otherwise fallback to default_date
+                processed_rows.append([cve, epss, percentile, model_version, publish_date or default_date])
     return processed_rows
 
+
 def import_to_postgres(rows):
+    # Ensure all CVEs in rows are present in canonical table
+    conn = psycopg2.connect(**PG_CONFIG)
+    try:
+        with conn:
+            for row in rows:
+                ensure_cve_exists(conn, row[0], source='epss')
+    finally:
+        conn.close()
+
     logging.info(f"Importing {len(rows)} rows into PostgreSQL...")
     conn = None
     try:
@@ -106,7 +133,7 @@ def import_to_postgres(rows):
             epss FLOAT,
             percentile FLOAT,
             model TEXT,
-            date DATE
+            publish_date DATE
         );
         """)
         # Use COPY for efficient bulk import
@@ -116,7 +143,7 @@ def import_to_postgres(rows):
         writer.writerows(rows)
         buf.seek(0)
         cur.copy_expert(
-            "COPY epssdb (cve, epss, percentile, model, date) FROM STDIN WITH CSV",
+            "COPY epssdb (cve, epss, percentile, model, publish_date) FROM STDIN WITH CSV",
             buf
         )
         conn.commit()
@@ -134,9 +161,33 @@ def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
+import argparse
+
 def main():
-    last_date = get_last_imported_date()
-    start_date = last_date + timedelta(days=1)
+    parser = argparse.ArgumentParser(description="EPSS ETL: full or incremental mode")
+    parser.add_argument('--mode', choices=['full', 'incremental'], default='incremental', help='Update mode: full (all data) or incremental (default)')
+    args = parser.parse_args()
+
+    print("Starting update_epss.py", flush=True)
+    logging.info("Starting update_epss.py")
+
+    if args.mode == 'full':
+        # Full mode: truncate table and re-import all data
+        logging.info("FULL mode: truncating epssdb table and re-importing all EPSS data.")
+        conn = psycopg2.connect(**PG_CONFIG)
+        try:
+            with conn:
+                cur = conn.cursor()
+                cur.execute("DROP TABLE IF EXISTS epssdb;")
+                conn.commit()
+        finally:
+            conn.close()
+        # Earliest possible EPSS date (v1) is 2021-04-14
+        start_date = datetime.strptime('2021-04-14', '%Y-%m-%d')
+    else:
+        last_date = get_last_imported_date()
+        start_date = last_date + timedelta(days=1)
+
     end_date = datetime.today() + timedelta(days=1)
     logging.info(f"Auto data import: {start_date.date()} to {end_date.date()}")
     for d in daterange(start_date, end_date):
@@ -158,5 +209,13 @@ def main():
             pass
     logging.info("Auto data import finished.")
 
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        import traceback
+        print("Fatal error in update_epss.py:", e, file=sys.stderr, flush=True)
+        traceback.print_exc()
+        logging.error("Fatal error in update_epss.py", exc_info=True)
+        sys.exit(1)

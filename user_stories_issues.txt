@@ -1,0 +1,95 @@
+PHASE: Security Hardening
+TITLE: Store DB credentials securely
+BODY: As a developer, I want to store database credentials in Docker secrets or a secure secrets manager, so that sensitive information is not exposed in code or environment variables.
+LABELS: phase:security,enhancement
+---
+PHASE: Security Hardening
+TITLE: Pin dependency versions
+BODY: As a maintainer, I want all Python dependencies to have pinned versions in requirements.txt, so that builds are reproducible and supply chain risks are minimized.
+LABELS: phase:security,enhancement
+---
+PHASE: Security Hardening
+TITLE: Sanitize error logs
+BODY: As an operator, I want all error logs to be sanitized, so that sensitive data and stack traces are not leaked in production logs.
+LABELS: phase:security,enhancement
+---
+PHASE: Reliability & Data Integrity
+TITLE: Robust error handling and logging in ETL scripts
+BODY: As a developer, I want all ETL scripts to have robust error handling and logging, so that failures are visible and actionable.
+LABELS: phase:reliability,enhancement
+---
+PHASE: Reliability & Data Integrity
+TITLE: Retry logic for network and database operations
+BODY: As a user, I want the system to retry network and database operations on transient errors, so that temporary issues do not cause data loss.
+LABELS: phase:reliability,enhancement
+---
+PHASE: Reliability & Data Integrity
+TITLE: Type hints and type checking in Python codebase
+BODY: As a developer, I want all Python functions to have type hints and the codebase to pass type checking, so that bugs are caught early and the code is easier to maintain.
+LABELS: phase:reliability,enhancement
+---
+PHASE: Reliability & Data Integrity
+TITLE: Normalize references and similar fields in database schema
+BODY: As a data engineer, I want fields like references to be normalized in the database schema, so that data is easier to query and maintain.
+LABELS: phase:reliability,enhancement
+---
+PHASE: Maintainability & Performance
+TITLE: Refactor shared config and utilities (DRY principle)
+BODY: As a developer, I want shared configuration and utility logic to be refactored into common modules, so that code is not duplicated across ETL scripts (DRY principle).
+LABELS: phase:maintenance,enhancement
+---
+PHASE: Maintainability & Performance
+TITLE: Enable safe parallel ETL execution
+BODY: As an operator, I want ETL jobs to be capable of running in parallel where safe, so that large data imports complete faster.
+LABELS: phase:maintenance,enhancement
+---
+PHASE: Maintainability & Performance
+TITLE: Reliable cleanup of temporary files and resources
+BODY: As a maintainer, I want all temporary files and resources to be reliably cleaned up, even on error, so that disk usage remains under control.
+LABELS: phase:maintenance,enhancement
+---
+PHASE: Optional/Advanced Enhancements
+TITLE: Automate static analysis and security linting in CI/CD
+BODY: As a maintainer, I want static analysis and security linting (e.g., bandit, pylint, black) to run automatically in CI/CD, so that code quality and security are continuously enforced.
+LABELS: phase:advanced,enhancement
+---
+PHASE: Optional/Advanced Enhancements
+TITLE: Expand unit and integration testing
+BODY: As a developer, I want comprehensive unit and integration tests for ETL scripts, so that regressions and edge cases are caught before release.
+LABELS: phase:advanced,enhancement
+---
+PHASE: Optional/Advanced Enhancements
+TITLE: Measure and track code coverage
+BODY: As a team, I want to measure and track code coverage, so that we can ensure our tests are effective.
+LABELS: phase:advanced,enhancement
+---
+PHASE: Frontend Web Application
+TITLE: Web dashboard for CVE and exploit data
+BODY: As a security analyst, I want a web dashboard where I can search, filter, and browse CVEs, EPSS scores, KEV, and exploit data, so that I can quickly find relevant vulnerabilities.
+LABELS: phase:frontend,frontend
+---
+PHASE: Frontend Web Application
+TITLE: Visualize vulnerability trends with charts and graphs
+BODY: As a user, I want to visualize vulnerability trends over time with charts and graphs, so that I can spot patterns and prioritize risks.
+LABELS: phase:frontend,frontend
+---
+PHASE: Frontend Web Application
+TITLE: Export search results as CSV or JSON
+BODY: As a user, I want to export search results as CSV or JSON, so that I can use the data in external tools.
+LABELS: phase:frontend,frontend
+---
+PHASE: Frontend Web Application
+TITLE: REST or GraphQL API for vulnerability data
+BODY: As a developer, I want a REST or GraphQL API that exposes queryable vulnerability data, so that the frontend and external tools can access data efficiently.
+LABELS: phase:frontend,api
+---
+PHASE: Frontend Web Application
+TITLE: Containerize and secure frontend and API
+BODY: As an admin, I want the frontend and API to be containerized and secured (HTTPS, authentication if needed), so that deployment is easy and safe.
+LABELS: phase:frontend,security
+---
+PHASE: Frontend Web Application
+TITLE: Document frontend usage and deployment
+BODY: As a contributor, I want clear documentation for using, deploying, and extending the frontend, so that others can participate in the project.
+LABELS: phase:frontend,documentation
+---

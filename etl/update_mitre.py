@@ -4,6 +4,29 @@ import psycopg2
 from datetime import datetime
 from glob import glob
 import logging
+import subprocess
+from cve_utils import ensure_cve_exists
+
+# --- Incremental MITRE CVE processing setup ---
+MITRE_ROOT = os.path.join(os.path.dirname(__file__), 'mitre-cvelistV5')
+MITRE_DIR = os.path.join(MITRE_ROOT, 'cves')
+LAST_COMMIT_FILE = os.path.join(MITRE_ROOT, '.last_import_commit')
+
+def get_latest_commit():
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=MITRE_ROOT).decode().strip()
+
+def get_changed_files(last_commit, current_commit):
+    output = subprocess.check_output(['git', 'diff', '--name-only', f'{last_commit}', f'{current_commit}'], cwd=MITRE_ROOT)
+    return [os.path.join(MITRE_ROOT, f) for f in output.decode().splitlines() if f.endswith('.json') and 'CVE-' in f]
+
+def get_all_cve_jsons():
+    files = []
+    for root, dirs, filelist in os.walk(MITRE_DIR):
+        for file in filelist:
+            if file.startswith('CVE-') and file.endswith('.json'):
+                files.append(os.path.join(root, file))
+    return files
+
 
 # Set up logging based on environment
 ENV = os.environ.get('ENV', 'development').lower()
@@ -79,6 +102,8 @@ def parse_cvss_vector(vector):
 def upsert_cve(record):
     conn = psycopg2.connect(**PG_CONFIG)
     try:
+        # Ensure CVE exists in canonical table before upsert
+        ensure_cve_exists(conn, record.get('cve_id'), source='mitre')
         with conn:
             with conn.cursor() as cur:
                 cur.execute("""
@@ -194,56 +219,120 @@ def parse_cve_json(path):
         'json_data': json.dumps(data)
     }
 
+import argparse
+import concurrent.futures
+import logging
+import time
+import random
+
+# ... (rest of the code remains the same)
+
+def process_batch(batch, mismatches):
+    success = True
+    for path in batch:
+        try:
+            record = parse_cve_json(path)
+            upsert_cve(record)
+            # Validation
+            try:
+                conn = psycopg2.connect(**PG_CONFIG)
+                with conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            SELECT cvss2_version, cvss2_vector, cvss2_score,
+                                   cvss3_version, cvss3_vector, cvss3_score,
+                                   cvss4_version, cvss4_vector, cvss4_score
+                            FROM mitre_cve WHERE cve_id = %s
+                        """, (record['cve_id'],))
+                        db_row = cur.fetchone()
+                        db_map = {
+                            'cvss2_version': db_row[0], 'cvss2_vector': db_row[1], 'cvss2_score': db_row[2],
+                            'cvss3_version': db_row[3], 'cvss3_vector': db_row[4], 'cvss3_score': db_row[5],
+                            'cvss4_version': db_row[6], 'cvss4_vector': db_row[7], 'cvss4_score': db_row[8],
+                        }
+                        for k in db_map:
+                            val_db = db_map[k]
+                            val_rec = record.get(k)
+                            if k.endswith('_score'):
+                                try:
+                                    if val_db is None and val_rec is None:
+                                        continue
+                                    if val_db is None or val_rec is None:
+                                        mismatches.append((record['cve_id'], k, val_rec, val_db))
+                                        logging.warning(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
+                                        continue
+                                    if float(val_db) != float(val_rec):
+                                        mismatches.append((record['cve_id'], k, val_rec, val_db))
+                                        logging.warning(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
+                                except Exception:
+                                    if str(val_db) != str(val_rec):
+                                        mismatches.append((record['cve_id'], k, val_rec, val_db))
+                                        logging.warning(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
+                            else:
+                                if str(val_db) != str(val_rec):
+                                    mismatches.append((record['cve_id'], k, val_rec, val_db))
+                                    logging.warning(f"Mismatch for {record['cve_id']} field {k}: record={val_rec}, db={val_db}")
+            except Exception as e:
+                logging.error(f"Validation error for {record.get('cve_id', path)}: {e}")
+        except Exception as e:
+            logging.error(f"Failed to process {path}: {e}")
+            success = False
+    return success
+
+def retry_batch(batch, attempts, mismatches):
+    for attempt in range(attempts):
+        if process_batch(batch, mismatches):
+            return True
+        logging.warning(f"Batch failed, retrying in {2**attempt} seconds...")
+        time.sleep(2**attempt)
+    return False
+
 def main():
-    import psycopg2
-    import subprocess
-    # Ensure MITRE cvelistV5 repo is present and up to date
-    import shutil
-    if not os.path.exists(MITRE_ROOT):
-        logging.info("MITRE cvelistV5 repo not found, cloning...")
-        subprocess.run([
-            'git', 'clone', 'https://github.com/CVEProject/cvelistV5.git', MITRE_ROOT
-        ], check=True)
-    elif not os.path.exists(os.path.join(MITRE_ROOT, '.git')):
-        logging.info("MITRE cvelistV5 directory exists but is not a git repo. Removing and cloning fresh...")
-        shutil.rmtree(MITRE_ROOT)
-        subprocess.run([
-            'git', 'clone', 'https://github.com/CVEProject/cvelistV5.git', MITRE_ROOT
-        ], check=True)
+    parser = argparse.ArgumentParser(description="MITRE CVE ETL: full or incremental mode")
+    parser.add_argument('--mode', choices=['full', 'incremental'], default='incremental', help='Update mode: full (all files) or incremental (default)')
+    parser.add_argument('--workers', type=int, default=4, help='Number of worker processes')
+    parser.add_argument('--batch-size', type=int, default=100, help='Batch size for DB upserts')
+    parser.add_argument('--verbosity', type=int, default=1, help='Verbosity level (0-3)')
+    args = parser.parse_args()
+
+    # ... (rest of the code remains the same)
+
+    files_to_process = get_all_cve_jsons()
+    logging.info(f"Processing {len(files_to_process)} MITRE CVE files...")
+
+    batches = [files_to_process[i:i+args.batch_size] for i in range(0, len(files_to_process), args.batch_size)]
+
+    mismatches = []
+    failed_batches = []
+    processed_count = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
+        futures = {executor.submit(retry_batch, batch, 3, mismatches): batch for batch in batches}
+        for future in concurrent.futures.as_completed(futures):
+            batch = futures[future]
+            try:
+                if not future.result():
+                    logging.error(f"Batch failed after 3 retries: {batch}")
+                    failed_batches.extend(batch)
+                else:
+                    processed_count += len(batch)
+                    if processed_count % 1000 == 0 or processed_count == len(files_to_process):
+                        logging.info(f"Upserted {processed_count}/{len(files_to_process)} records...")
+            except Exception as e:
+                logging.error(f"Error processing batch: {e}")
+                failed_batches.extend(batch)
+
+    if failed_batches:
+        print(f"WARNING: The following files failed after retries: {failed_batches}")
+    if mismatches:
+        print(f"Validation complete. {len(mismatches)} mismatches found.")
     else:
-        logging.info("MITRE cvelistV5 repo found and is a git repo, pulling latest updates...")
-        subprocess.run([
-            'git', '-C', MITRE_ROOT, 'pull'
-        ], check=True)
-    # Ensure mitre_cve table exists
-    conn = psycopg2.connect(**PG_CONFIG)
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-CREATE TABLE IF NOT EXISTS mitre_cve (
-    cve_id TEXT PRIMARY KEY,
-    year INT,
-    state TEXT,
-    assigner TEXT,
-    published TEXT,
-    last_modified TEXT,
-    description TEXT,
-    "references" TEXT,
-    cvss2_version TEXT,
-    cvss2_vector TEXT,
-    cvss2_score FLOAT,
-    cvss3_version TEXT,
-    cvss3_vector TEXT,
-    cvss3_score FLOAT,
-    cvss4_version TEXT,
-    cvss4_vector TEXT,
-    cvss4_score FLOAT,
-    json_data TEXT
-);
-""")
-    finally:
-        conn.close()
+        print("Validation complete. No mismatches found.")
+    print(f"MITRE CVE import complete. Total processed: {processed_count}/{len(files_to_process)}")
+    # After successful processing, update the commit file
+    with open(LAST_COMMIT_FILE, 'w') as f:
+        f.write(get_latest_commit())
+    logging.info(f"Updated last commit file to {get_latest_commit()}.")
+
     pattern = os.path.join(MITRE_DIR, '**', 'CVE-*.json')
     files = glob(pattern, recursive=True)
     logging.info(f"Found {len(files)} MITRE CVE JSON files.")

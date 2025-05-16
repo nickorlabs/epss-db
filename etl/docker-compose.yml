@@ -7,6 +7,7 @@ services:
     secrets:
       - pg_user
       - pg_password
+      - nvd_api_key
     ports:
       - "5432:5432"
     volumes:
@@ -18,7 +19,7 @@ services:
     volumes:
       - ./:/scripts
       - ./epss-data:/scripts/epss-data  # Dedicated persistent storage for ETL data
-      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:rw
+      - /opt/epss-fork/etl/mitre-cvelistV5:/scripts/mitre-cvelistV5:rw
     working_dir: /scripts
     depends_on:
       - db
@@ -28,6 +29,7 @@ services:
     secrets:
       - pg_user
       - pg_password
+      - nvd_api_key
 
   epss_importer:
     build:
@@ -36,7 +38,7 @@ services:
     volumes:
       - ./:/scripts
       - ./epss-data:/scripts/epss-data  # Dedicated persistent storage for ETL data
-      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:rw
+      - /opt/epss-fork/etl/mitre-cvelistV5:/scripts/mitre-cvelistV5:rw
       - ../../:/project_root
     working_dir: /scripts
     depends_on:
@@ -47,6 +49,7 @@ services:
     secrets:
       - pg_user
       - pg_password
+      - nvd_api_key
     command: ["python", "update_epss.py"]
 
   kev_importer:
@@ -56,7 +59,7 @@ services:
     volumes:
       - ./:/scripts
       - ./epss-data:/scripts/epss-data  # Dedicated persistent storage for ETL data
-      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:rw
+      - /opt/epss-fork/etl/mitre-cvelistV5:/scripts/mitre-cvelistV5:rw
       - ../../:/project_root
     working_dir: /scripts
     depends_on:
@@ -67,6 +70,7 @@ services:
     secrets:
       - pg_user
       - pg_password
+      - nvd_api_key
     command: ["python", "update_kev.py"]
 
   vulnrich_importer:
@@ -76,7 +80,7 @@ services:
     volumes:
       - ./:/scripts
       - ./epss-data:/scripts/epss-data  # Dedicated persistent storage for ETL data
-      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:rw
+      - /opt/epss-fork/etl/mitre-cvelistV5:/scripts/mitre-cvelistV5:rw
       - ../../:/project_root
     working_dir: /scripts
     depends_on:
@@ -87,6 +91,7 @@ services:
     secrets:
       - pg_user
       - pg_password
+      - nvd_api_key
     command: ["python", "update_vulnrich.py"]
 
   # If you ever need to build a custom DB image (e.g., for extensions), uncomment below:
@@ -114,7 +119,7 @@ services:
     volumes:
       - ./:/scripts
       - ./epss-data:/scripts/epss-data  # Dedicated persistent storage for ETL data
-      - /opt/epss-fork/etl/mitre-cvelistV5/cves:/scripts/mitre-cvelistV5/cves:rw
+      - /opt/epss-fork/etl/mitre-cvelistV5:/scripts/mitre-cvelistV5:rw
     working_dir: /scripts
     depends_on:
       - db
@@ -124,6 +129,7 @@ services:
     secrets:
       - pg_user
       - pg_password
+      - nvd_api_key
     command: ["python", "update_all.py"]
     # Note: No restart policy for ETL jobs; they should exit after completion.
 
@@ -136,3 +142,5 @@ secrets:
     file: ./secrets/pg_user
   pg_password:
     file: ./secrets/pg_password
+  nvd_api_key:
+    file: ./secrets/nvd_api_key
