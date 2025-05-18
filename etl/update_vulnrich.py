@@ -2,6 +2,7 @@ import os
 import subprocess
 import json
 import psycopg2
+from psycopg2.extras import execute_batch
 from glob import glob
 from datetime import datetime
 import logging
@@ -9,6 +10,7 @@ from cve_utils import ensure_cve_exists
 import concurrent.futures
 import time
 import argparse
+from etl_utils import RunMetrics, dry_run_notice
 
 # Set up logging based on environment
 ENV = os.environ.get('ENV', 'development').lower()
@@ -138,23 +140,16 @@ def parse_jsons(json_files):
             except Exception as e:
                 if ENV == 'production':
                     logging.warning(f"Failed to parse {json_file}")
-                else:
-                    logging.warning(f"Failed to parse {json_file}: {e}", exc_info=True)
     logging.info(f"Parsed {len(records)} records.")
     return records
 
 
-def import_to_postgres(records, batch_size=1000, max_retries=3):
-    # Ensure all CVEs in records are present in canonical table
-    conn = psycopg2.connect(**PG_CONFIG)
-    try:
-        with conn:
-            for record in records:
-                ensure_cve_exists(conn, record.get('cve'), source='vulnrichment')
-    finally:
-        conn.close()
-
-    logging.info(f"Importing {len(records)} records into PostgreSQL in batches of {batch_size}...")
+def import_to_postgres(records, batch_size=1000, max_retries=3, dry_run=False, metrics=None):
+    if metrics is not None:
+        metrics.inserts += len(records)
+    if dry_run:
+        logging.info(f"[DRY RUN] Would upsert {len(records)} records into vulnrichment.")
+        return
     conn = psycopg2.connect(**PG_CONFIG)
     try:
         with conn:
@@ -162,19 +157,8 @@ def import_to_postgres(records, batch_size=1000, max_retries=3):
                 cur.execute(CREATE_TABLE_SQL)
                 for i in range(0, len(records), batch_size):
                     batch = records[i:i+batch_size]
-                    for attempt in range(max_retries):
-                        try:
-                            cur.executemany(INSERT_SQL, batch)
-                            logging.info(f"Inserted batch {i//batch_size+1} ({len(batch)} records)")
-                            break
-                        except Exception as e:
-                            logging.error(f"Error inserting batch {i//batch_size+1}: {e}")
-                            if attempt < max_retries-1:
-                                sleep_time = 2 ** attempt
-                                logging.info(f"Retrying batch {i//batch_size+1} in {sleep_time}s...")
-                                time.sleep(sleep_time)
-                            else:
-                                logging.error(f"Batch {i//batch_size+1} failed after {max_retries} attempts.")
+                    psycopg2.extras.execute_batch(cur, INSERT_SQL, batch, page_size=100)
+                    logging.info(f"Upserted {len(batch)} records into vulnrichment.")
         logging.info("Vulnrichment import complete.")
     finally:
         conn.close()
@@ -214,6 +198,7 @@ def main():
     parser.add_argument('--workers', type=int, default=int(os.environ.get('VULN_WORKERS', 4)), help="Number of parallel worker threads (default: 4)")
     parser.add_argument('--batch-size', type=int, default=int(os.environ.get('VULN_BATCH_SIZE', 1000)), help="Batch size for DB upserts (default: 1000)")
     parser.add_argument('--verbosity', type=int, default=2, help="Verbosity: 1=WARNING, 2=INFO, 3=DEBUG")
+    parser.add_argument('--dry-run', '-n', action='store_true', help='Run ETL without writing to the database')
     args = parser.parse_args()
 
     # Set logging level per CLI
@@ -223,6 +208,10 @@ def main():
         logging.getLogger().setLevel(logging.INFO)
     elif args.verbosity >= 3:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    metrics = RunMetrics(dry_run=args.dry_run)
+    if args.dry_run:
+        dry_run_notice()
 
     LAST_COMMIT_FILE = os.path.join(VULNREPO_DIR, '.last_import_commit')
     current_commit = get_latest_commit()
@@ -261,10 +250,12 @@ def main():
         with open(LAST_COMMIT_FILE, 'w') as f:
             f.write(current_commit)
         return
-    import_to_postgres(records, batch_size=args.batch_size)
+    import_to_postgres(records, batch_size=args.batch_size, dry_run=args.dry_run, metrics=metrics)
+    logging.info(f"[SUMMARY] Records processed: {metrics.inserts}")
     # Update commit file after successful import
-    with open(LAST_COMMIT_FILE, 'w') as f:
-        f.write(current_commit)
+    if not args.dry_run:
+        with open(LAST_COMMIT_FILE, 'w') as f:
+            f.write(current_commit)
 
 
 if __name__ == "__main__":

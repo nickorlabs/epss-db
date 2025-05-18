@@ -13,6 +13,7 @@ from datetime import datetime
 from glob import glob
 import logging
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from etl_utils import safe_execute, safe_executemany, dry_run_notice, RunMetrics
 
 # Set up logging; default to WARNING, override with --verbose or ENV
 ENV = os.environ.get('ENV', 'development').lower()
@@ -144,8 +145,15 @@ def put_connection(conn):
 
 import psycopg2.extras
 
-def upsert_cves_batch(conn, records):
+def upsert_cves_batch(conn, records, dry_run=False, metrics=None):
     if not records:
+        return
+    if metrics is None:
+        metrics = RunMetrics(dry_run=dry_run)
+    if dry_run:
+        dry_run_notice()
+        logging.info(f"[DRY RUN] Would upsert {len(records)} CVE records into nvd_cve.")
+        metrics.inserts += len(records)
         return
     with conn.cursor() as cur:
         psycopg2.extras.execute_batch(
@@ -208,6 +216,7 @@ ON CONFLICT (cve_id) DO UPDATE SET
             records,
             page_size=1000
         )
+    metrics.inserts += len(records)
 
 def extract_cve_record(item):
     # NVD REST API v2.0 CVE record structure
@@ -309,9 +318,16 @@ import time
 BATCH_SIZE = int(os.environ.get('NVD_BATCH_SIZE', 2000))
 SLEEP_BETWEEN_REQUESTS = float(os.environ.get('NVD_SLEEP_BETWEEN_REQUESTS', 0.5))
 
-def upsert_cve_references_batch(conn, records):
+def upsert_cve_references_batch(conn, records, dry_run=False, metrics=None):
     # records: list of dicts with keys 'cve_id', 'url'
     if not records:
+        return
+    if metrics is None:
+        metrics = RunMetrics(dry_run=dry_run)
+    if dry_run:
+        dry_run_notice()
+        logging.info(f"[DRY RUN] Would upsert {len(records)} nvd_cve_reference records.")
+        metrics.inserts += len(records)
         return
     with conn.cursor() as cur:
         psycopg2.extras.execute_batch(
@@ -323,6 +339,7 @@ ON CONFLICT DO NOTHING;
 """,
             records
         )
+    metrics.inserts += len(records)
 
 from cve_utils import ensure_cve_exists
 
@@ -361,7 +378,7 @@ def fetch_and_process_page(page_idx, results_per_page, last_mod_start_date, last
         put_connection(conn)
     return records, references_batch, len(cves)
 
-def process_all_cves_parallel(existing_last_modified, last_mod_start_date=None, last_mod_end_date=None, workers=4, batch_size=2000, sleep_between_requests=0.5):
+def process_all_cves_parallel(existing_last_modified, last_mod_start_date=None, last_mod_end_date=None, workers=4, batch_size=2000, sleep_between_requests=0.5, dry_run=False, metrics=None):
     print("Starting NVD CVE import (parallel)...")
     sys.stdout.flush()
     # First, get total number of results
@@ -434,9 +451,9 @@ def process_all_cves_parallel(existing_last_modified, last_mod_start_date=None, 
     conn = get_connection()
     try:
         for i in range(0, len(all_records), batch_size):
-            upsert_cves_batch(conn, all_records[i:i+batch_size])
+            upsert_cves_batch(conn, all_records[i:i+batch_size], dry_run=dry_run, metrics=metrics)
         for i in range(0, len(all_references), batch_size):
-            upsert_cve_references_batch(conn, all_references[i:i+batch_size])
+            upsert_cve_references_batch(conn, all_references[i:i+batch_size], dry_run=dry_run, metrics=metrics)
     finally:
         put_connection(conn)
     print(f"NVD CVE import complete. Total CVEs processed: {fetched}")
@@ -461,12 +478,18 @@ def main():
     parser.add_argument('--rate-limit', type=int, default=int(os.environ.get('NVD_RATE_LIMIT', 50)), help='Max NVD API requests per window (default 50 for API key users, 5 for public)')
     parser.add_argument('--rate-period', type=int, default=int(os.environ.get('NVD_RATE_PERIOD', 30)), help='NVD API rate limit window in seconds (default 30)')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+    parser.add_argument('--dry-run', action='store_true', help='Dry run mode: log DB actions, do not write')
     args = parser.parse_args()
 
     if args.verbose:
         logging.getLogger().setLevel(logging.INFO)
     else:
         logging.getLogger().setLevel(logging.WARNING)
+
+    dry_run = args.dry_run
+    metrics = RunMetrics(dry_run=dry_run)
+    if dry_run:
+        dry_run_notice()
 
     # Warn if user tries to exceed official API key rate limit
     if args.rate_limit > 50:
@@ -489,7 +512,7 @@ def main():
         with conn:
             with conn.cursor() as cur:
                 # Main CVE table
-                cur.execute("""
+                safe_execute(cur, """
 CREATE TABLE IF NOT EXISTS nvd_cve (
     cve_id TEXT PRIMARY KEY,
     published TEXT,
@@ -532,15 +555,15 @@ CREATE TABLE IF NOT EXISTS nvd_cve (
     "references" TEXT,
     json_data TEXT
 );
-""")
+""", dry_run=dry_run)
                 # Normalized references table
-                cur.execute("""
+                safe_execute(cur, """
 CREATE TABLE IF NOT EXISTS nvd_cve_reference (
     id SERIAL PRIMARY KEY,
     cve_id TEXT REFERENCES nvd_cve(cve_id),
     url TEXT NOT NULL
 );
-""")
+""", dry_run=dry_run)
         # Get all existing last_modified dates
         existing_last_modified = get_existing_last_modified(conn)
         last_mod_start_date = None
@@ -590,7 +613,9 @@ CREATE TABLE IF NOT EXISTS nvd_cve_reference (
             last_mod_end_date,
             workers=args.workers,
             batch_size=args.batch_size,
-            sleep_between_requests=args.sleep
+            sleep_between_requests=args.sleep,
+            dry_run=dry_run,
+            metrics=metrics
         )
     finally:
         db_pool.putconn(conn)

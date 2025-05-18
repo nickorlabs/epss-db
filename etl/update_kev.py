@@ -86,21 +86,30 @@ def fetch_kev_json():
 
 from cve_utils import ensure_cve_exists
 
-def import_to_postgres(vulns):
+def import_to_postgres(vulns, dry_run=False, metrics=None):
     from datetime import date
-    logging.info(f"Importing {len(vulns)} vulnerabilities into PostgreSQL with upsert...")
+    from etl_utils import safe_execute, safe_executemany
+    if metrics is None:
+        from etl_utils import RunMetrics
+        metrics = RunMetrics(dry_run=dry_run)
+    logging.info(f"Importing {len(vulns)} vulnerabilities into PostgreSQL with upsert... (dry_run={dry_run})")
     conn = None
     try:
         conn = psycopg2.connect(**PG_CONFIG)
         with conn:
             with conn.cursor() as cur:
-                cur.execute(CREATE_TABLE_SQL)
+                safe_execute(cur, CREATE_TABLE_SQL, dry_run=dry_run)
                 today = date.today()
                 kev_cveids = set()
                 for v in vulns:
                     cve_id = v.get('cveID')
                     kev_cveids.add(cve_id)
-                    ensure_cve_exists(conn, cve_id, source='kev')
+                    if not dry_run:
+                        ensure_cve_exists(conn, cve_id, source='kev')
+                        metrics.inserts += 1  # Treat as insert for metrics (or refine if you can detect update)
+                    else:
+                        logging.info(f"[DRY RUN] Would ensure CVE exists: {cve_id} (kev)")
+                        metrics.inserts += 1
                     row = {
                         'cveID': cve_id,
                         'vendorProject': v.get('vendorProject'),
@@ -138,12 +147,23 @@ def import_to_postgres(vulns):
             conn.close()
 
 def main():
+    import argparse
+    from etl_utils import RunMetrics, dry_run_notice
+    parser = argparse.ArgumentParser(description="KEV ETL")
+    parser.add_argument('--dry-run', '-n', action='store_true', help='Run ETL without writing to the database')
+    args = parser.parse_args()
+    metrics = RunMetrics(dry_run=args.dry_run)
+    if args.dry_run:
+        dry_run_notice()
     data = fetch_kev_json()
     vulns = data.get('vulnerabilities', [])
+    metrics.fetched = len(vulns)
     if not vulns:
         logging.warning("No vulnerabilities found in KEV JSON!")
+        metrics.log_summary()
         return
-    import_to_postgres(vulns)
+    import_to_postgres(vulns, dry_run=args.dry_run, metrics=metrics)
+    metrics.log_summary()
 
 if __name__ == "__main__":
     main()

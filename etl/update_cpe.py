@@ -5,6 +5,7 @@ import psycopg2
 import psycopg2.extras
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 import logging
+from etl_utils import RunMetrics, dry_run_notice
 
 def read_secret(secret_path, fallback=None):
     try:
@@ -34,18 +35,15 @@ def fetch_cpes_from_api(params):
         resp.raise_for_status()
     return resp.json()
 
-    cpe23uri TEXT PRIMARY KEY,
-    title TEXT,
-    deprecated BOOLEAN,
-    last_modified TEXT,
-    json_data TEXT
-);
-""")
-    finally:
-        conn.close()
+# Removed leftover SQL DDL and misplaced code from fetch_cpes_from_api.
 
-def upsert_cpes_batch(records):
+def upsert_cpes_batch(records, dry_run=False, metrics=None):
     if not records:
+        return
+    if metrics is not None:
+        metrics.inserts += len(records)
+    if dry_run:
+        logging.info(f"[DRY RUN] Would upsert {len(records)} CPE records into nvd_cpe.")
         return
     conn = psycopg2.connect(**PG_CONFIG)
     try:
@@ -90,7 +88,7 @@ import time
 BATCH_SIZE = 2000
 SLEEP_BETWEEN_REQUESTS = 0.5
 
-def process_all_cpes():
+def process_all_cpes(dry_run=False, metrics=None):
     import sys
     results_per_page = BATCH_SIZE
     start_index = 0
@@ -106,7 +104,7 @@ def process_all_cpes():
         data = fetch_cpes_from_api(params)
         cpes = data.get("products", [])
         records = [extract_cpe_record(cpe_item) for cpe_item in cpes]
-        upsert_cpes_batch(records)
+        upsert_cpes_batch(records, dry_run=dry_run, metrics=metrics)
         fetched += len(cpes)
         if total_results is None:
             total_results = data.get("totalResults", 0)
@@ -117,11 +115,38 @@ def process_all_cpes():
         start_index += results_per_page
         time.sleep(SLEEP_BETWEEN_REQUESTS)
     print(f"NVD CPE import complete. Total CPEs processed: {fetched}")
+    if metrics is not None:
+        logging.info(f"[SUMMARY] Records processed: {metrics.inserts}")
     sys.stdout.flush()
 
+def ensure_cpe_table():
+    conn = psycopg2.connect(**PG_CONFIG)
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                CREATE TABLE IF NOT EXISTS nvd_cpe (
+                    cpe23uri TEXT PRIMARY KEY,
+                    title TEXT,
+                    deprecated BOOLEAN,
+                    last_modified TEXT,
+                    json_data TEXT
+                );
+                """)
+    finally:
+        conn.close()
+
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="NVD CPE ETL")
+    parser.add_argument('--dry-run', '-n', action='store_true', help='Run ETL without writing to the database')
+    args = parser.parse_args()
+    metrics = RunMetrics(dry_run=args.dry_run)
+    if args.dry_run:
+        dry_run_notice()
     ensure_cpe_table()
-    process_all_cpes()
+    process_all_cpes(dry_run=args.dry_run, metrics=metrics)
+    logging.info(f"CPE import complete. Total processed: {metrics.inserts}")
 
 if __name__ == "__main__":
     main()

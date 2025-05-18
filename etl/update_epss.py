@@ -8,6 +8,7 @@ import psycopg2
 import logging
 from cve_utils import ensure_cve_exists
 from datetime import datetime, timedelta
+from etl_utils import safe_execute, dry_run_notice, RunMetrics
 
 # Set up logging to both file and console
 logging.basicConfig(
@@ -112,22 +113,36 @@ def preprocess_csv(csv_file, default_date):
     return processed_rows
 
 
-def import_to_postgres(rows):
+def import_to_postgres(rows, dry_run=False, metrics=None):
     # Ensure all CVEs in rows are present in canonical table
-    conn = psycopg2.connect(**PG_CONFIG)
+    if metrics is None:
+        metrics = RunMetrics(dry_run=dry_run)
+    if dry_run:
+        dry_run_notice()
+        logging.info(f"[DRY RUN] Would process {len(rows)} rows.")
     try:
-        with conn:
+        if not dry_run:
+            conn = psycopg2.connect(**PG_CONFIG)
+            with conn:
+                for row in rows:
+                    ensure_cve_exists(conn, row[0], source='epss')
+            conn.close()
+        else:
             for row in rows:
-                ensure_cve_exists(conn, row[0], source='epss')
-    finally:
-        conn.close()
-
-    logging.info(f"Importing {len(rows)} rows into PostgreSQL...")
+                logging.info(f"[DRY RUN] Would ensure CVE exists: {row[0]}")
+    except Exception as e:
+        logging.error(f"ERROR ensuring CVEs: {e}")
+        metrics.errors += 1
+    metrics.fetched += len(rows)
+    metrics.inserts += len(rows)
+    if dry_run:
+        logging.info(f"[DRY RUN] Would import {len(rows)} rows into PostgreSQL...")
+        return
     conn = None
     try:
         conn = psycopg2.connect(**PG_CONFIG)
         cur = conn.cursor()
-        cur.execute("""
+        safe_execute(cur, """
         CREATE TABLE IF NOT EXISTS epssdb (
             cve TEXT,
             epss FLOAT,
@@ -135,21 +150,25 @@ def import_to_postgres(rows):
             model TEXT,
             publish_date DATE
         );
-        """)
+        """, dry_run=dry_run)
         # Use COPY for efficient bulk import
         import io
         buf = io.StringIO()
         writer = csv.writer(buf)
         writer.writerows(rows)
         buf.seek(0)
-        cur.copy_expert(
-            "COPY epssdb (cve, epss, percentile, model, publish_date) FROM STDIN WITH CSV",
-            buf
-        )
-        conn.commit()
-        logging.info("Import complete.")
+        if not dry_run:
+            cur.copy_expert(
+                "COPY epssdb (cve, epss, percentile, model, publish_date) FROM STDIN WITH CSV",
+                buf
+            )
+            conn.commit()
+            logging.info("Import complete.")
+        else:
+            logging.info(f"[DRY RUN] Would COPY {len(rows)} rows into epssdb.")
     except Exception as e:
         logging.error(f"ERROR importing to PostgreSQL: {e}")
+        metrics.errors += 1
         if conn:
             conn.rollback()
     finally:
@@ -166,22 +185,30 @@ import argparse
 def main():
     parser = argparse.ArgumentParser(description="EPSS ETL: full or incremental mode")
     parser.add_argument('--mode', choices=['full', 'incremental'], default='incremental', help='Update mode: full (all data) or incremental (default)')
+    parser.add_argument('--dry-run', action='store_true', help='Dry run mode: log DB actions, do not write')
     args = parser.parse_args()
 
+    dry_run = args.dry_run
+    metrics = RunMetrics(dry_run=dry_run)
     print("Starting update_epss.py", flush=True)
     logging.info("Starting update_epss.py")
+    if dry_run:
+        dry_run_notice()
 
     if args.mode == 'full':
         # Full mode: truncate table and re-import all data
         logging.info("FULL mode: truncating epssdb table and re-importing all EPSS data.")
-        conn = psycopg2.connect(**PG_CONFIG)
-        try:
-            with conn:
-                cur = conn.cursor()
-                cur.execute("DROP TABLE IF EXISTS epssdb;")
-                conn.commit()
-        finally:
-            conn.close()
+        if not dry_run:
+            conn = psycopg2.connect(**PG_CONFIG)
+            try:
+                with conn:
+                    cur = conn.cursor()
+                    safe_execute(cur, "DROP TABLE IF EXISTS epssdb;", dry_run=dry_run)
+                    conn.commit()
+            finally:
+                conn.close()
+        else:
+            logging.info("[DRY RUN] Would drop table epssdb.")
         # Earliest possible EPSS date (v1) is 2021-04-14
         start_date = datetime.strptime('2021-04-14', '%Y-%m-%d')
     else:
@@ -196,17 +223,20 @@ def main():
         csv_file = download_and_extract(date_str)
         if not csv_file:
             logging.warning(f"Skipping {date_str} (no file)")
+            metrics.skipped += 1
             continue
         rows = preprocess_csv(csv_file, date_str)
         if rows:
-            import_to_postgres(rows)
+            import_to_postgres(rows, dry_run=dry_run, metrics=metrics)
         else:
             logging.info(f"No data for {date_str}")
+            metrics.skipped += 1
         # Clean up
         try:
             os.remove(csv_file)
         except Exception:
             pass
+    metrics.log_summary()
     logging.info("Auto data import finished.")
 
 
