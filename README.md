@@ -58,6 +58,7 @@ ExploitPulse supports scheduled (e.g., daily or hourly via cron) or on-demand ET
 │   ├── requirements.txt
 │   ├── update_epss.py         # Python ETL: EPSS
 │   ├── update_kev.py          # Python ETL: CISA KEV
+│   ├── update_cpe.py          # Python ETL: CPE (NVD CPE Dictionary)
 │   ├── update_vulnrich.py     # Python ETL: Vulnrichment
 │   ├── update_exploitdb.py    # Python ETL: ExploitDB (exploits, tags, metadata)
 │   └── update_all.py          # Run all ETL jobs in sequence
@@ -72,6 +73,53 @@ ExploitPulse supports scheduled (e.g., daily or hourly via cron) or on-demand ET
 ---
 
 ## Usage
+
+### Running ETL Scripts with `--dry-run`
+
+Both `update_kev.py` and `update_exploitdb.py` support a `--dry-run` (or `-n`) flag. This allows you to simulate the ETL process without making any changes to the database. All database operations (inserts, updates, deletes) will be logged but not executed.
+
+#### Example: KEV ETL Dry Run
+```bash
+docker compose run --rm importer python /scripts/update_kev.py --dry-run
+```
+
+#### Example: ExploitDB ETL Dry Run
+```bash
+docker compose run --rm importer python /scripts/update_exploitdb.py --dry-run
+```
+
+- When run with `--dry-run`, the script logs all actions it would take, including upserts and schema changes, but does **not** modify the database.
+- The logs will include `[DRY RUN]` prefixes for all simulated database operations and a summary at the end.
+
+### Real Run (No Dry Run)
+To perform the actual ETL and write changes to the database, simply omit the `--dry-run` flag:
+
+```bash
+docker compose run --rm importer python /scripts/update_exploitdb.py
+```
+
+### Metrics & Summary Output
+At the end of each ETL run (dry or real), a summary is logged, including:
+- Number of records fetched
+- Number of records inserted, updated, deleted
+- Number of errors and skipped records
+
+**Example summary (dry run):**
+```
+[DRY RUN] Would insert 46781 records, update 0, delete 0.
+[DRY RUN] Fetched 46781 records. Skipped: 0. Errors: 0.
+```
+**Example summary (real run):**
+```
+[SUMMARY] Inserted 46781 records, updated 0, deleted 0.
+[SUMMARY] Fetched 46781 records. Skipped: 0. Errors: 0.
+```
+
+### Schema Correction
+The ETL scripts will automatically ensure that required unique constraints exist on the database tables (e.g., `exploits (cve_id, source_id)`).
+
+---
+
 
 ### 1. Start the Database
 From the `etl` directory, start the database container:
@@ -95,6 +143,21 @@ Below are all supported command-line options for each ETL job, with recommended 
 docker compose run --rm mitre_importer python /scripts/update_mitre.py --mode incremental --workers 4 --batch-size 100 --verbosity 1
 ```
 
+#### **CPE ETL (`update_cpe.py`)
+- Supports `--dry-run` (or `-n`) to simulate the ETL without DB changes.
+- `--batch-size` (default: 1000): Batch size for DB upserts (if supported).
+
+**Dry Run Example:**
+```bash
+docker compose run --rm importer python /scripts/update_cpe.py --dry-run
+```
+**Real Run Example:**
+```bash
+docker compose run --rm importer python /scripts/update_cpe.py
+```
+- When run with `--dry-run`, all database operations (inserts, updates) are logged but not executed.
+- At the end, a summary of inserts, updates, deletes, errors, and fetched records is logged, just like the other ETL scripts.
+
 #### **NVD ETL (`update_nvd.py`)
 - `--mode` (`full` or `incremental`, default: `incremental`): Import all or only new/updated CVEs.
 - `--workers` (default: 4): Number of parallel workers for fetching.
@@ -106,18 +169,31 @@ docker compose run --rm nvd_importer python /scripts/update_nvd.py --mode increm
 ```
 
 #### **KEV ETL (`update_kev.py`)
-- No command-line switches. Simply run:
+- Supports `--dry-run` (or `-n`) to simulate the ETL without DB changes.
+
+**Dry Run Example:**
 ```bash
-docker compose run --rm kev_importer python /scripts/update_kev.py
+docker compose run --rm importer python /scripts/update_kev.py --dry-run
 ```
+**Real Run Example:**
+```bash
+docker compose run --rm importer python /scripts/update_kev.py
+```
+- At the end, a summary of inserts, updates, deletes, errors, and fetched records is logged. In dry run mode, all DB operations are logged but not executed.
 
 #### **EPSS ETL (`update_epss.py`)
+- Supports `--dry-run` (or `-n`) to simulate the ETL without DB changes.
 - `--mode` (`full` or `incremental`, default: `incremental`): Import all EPSS data or only new data.
 
-**Example:**
+**Dry Run Example:**
 ```bash
-docker compose run --rm epss_importer python /scripts/update_epss.py --mode incremental
+docker compose run --rm importer python /scripts/update_epss.py --mode incremental --dry-run
 ```
+**Real Run Example:**
+```bash
+docker compose run --rm importer python /scripts/update_epss.py --mode incremental
+```
+- At the end, a summary of inserts, updates, deletes, errors, and fetched records is logged. In dry run mode, all DB operations are logged but not executed.
 
 #### **Vulnrichment ETL (`update_vulnrich.py`)
 - `--mode` (`incremental` or `full`, default: `incremental`): Import only new/changed or all records.
@@ -130,10 +206,17 @@ docker compose run --rm vulnrich_importer python /scripts/update_vulnrich.py --m
 ```
 
 #### **ExploitDB ETL (`update_exploitdb.py`)
-- No command-line switches. Simply run:
+- Supports `--dry-run` (or `-n`) to simulate the ETL without DB changes.
+
+**Dry Run Example:**
 ```bash
-docker compose run --rm exploitdb_importer python /scripts/update_exploitdb.py
+docker compose run --rm importer python /scripts/update_exploitdb.py --dry-run
 ```
+**Real Run Example:**
+```bash
+docker compose run --rm importer python /scripts/update_exploitdb.py
+```
+- At the end, a summary of inserts, updates, deletes, errors, and fetched records is logged. In dry run mode, all DB operations are logged but not executed.
 
 > **Note:** Use `--mode full` for a full re-import if needed. The default is usually incremental for scripts that support it.
 
@@ -151,11 +234,6 @@ Use `psql` or any SQL client to explore tables:
 
 ---
 
-## Legacy Scripts
-All old shell scripts and MySQL configs are archived in `/archive/` and are no longer maintained. Use the new Python ETL scripts for all workflows.
-
----
-
 ## Data Validation & Integrity
 - **Inline validation**: All MITRE and NVD CVE imports now include inline validation—every record is checked after import to ensure database fields match the original source data.
 - **Integrity-first ETL**: This pattern will be extended to all other feeds (ExploitDB, OSV, Snyk, etc.) for robust, auditable data quality.
@@ -167,442 +245,6 @@ All old shell scripts and MySQL configs are archived in `/archive/` and are no l
 - Extend inline validation to all other feeds (ExploitDB, OSV, Snyk, etc.)
 - UI frontend for data exploration (coming soon)
 - See [issues](https://github.com/nickorlabs/ExploitPulse/issues) for roadmap
-
----
-
-## Appendix: Legacy Project Info
-
-The following section preserves the original project structure and setup/usage from the legacy (MySQL/shell) version of this repository. This is for historical reference only. **For all new deployments and usage, follow the main instructions above.**
-
-### Original Directory Structure
-```
-/opt/ExploitPulse
-|-- Documents
-|   |-- epss-graph.png
-|   `-- epss-graph_-a.png
-|-- LICENSE
-|-- README.md
-|-- docker
-|   |-- Dockerfile
-|   |-- README.md
-|   `-- env
-|-- epss-graph.sh
-|-- init-script
-|   |-- epss-init.sh
-|   |-- kev-init.sh
-|   `-- vulnrichment-init.sh
-|-- my.cnf
-|-- queryConsole.sh
-|-- skel
-|   `-- plot.plt
-|-- subprogram
-|   |-- epss-add.sh
-|   `-- vulnrichUpdate.sh
-|-- update-all.sh
-|-- update-epss.sh
-|-- update-kev.sh
-`-- update-vulnrich.sh
-```
-
-### Legacy Setup & Usage
-#### Docker Image
-```
-$ docker pull hogehuga/ExploitPulse
-```
-
-#### Create Docker Volumes
-```
-$ docker volume create epssDB
-$ docker volume create epssFile
-```
-
-#### Run Container (legacy)
-```
-$ docker container run --name epssdb -v epssDB:/var/lib/mysql -v epssFile:/opt/ExploitPulse/epss-data -e MYSQL_ROOT_PASSWORD=mysql -d hogehuga/ExploitPulse
-```
-
-#### Prepare Data (legacy)
-```
-$ docker exec -it epssdb /bin/bash
-# cd /opt/ExploitPulse/init-script
-# ./epss-init.sh
-```
-
-#### Optional: KEV Catalog (legacy)
-```
-$ docker exec -it epssdb /bin/bash
-# cd /opt/ExploitPulse/init-script
-# ./kev-init.sh
-```
-
-#### Experimental: Vulnrichment (legacy)
-```
-$ docker exec -it epssdb /bin/bash
-# cd /opt/ExploitPulse/init-script
-# ./vulnrichment-init.sh
-```
-
-#### Notes
-- The original project used MySQL, shell scripts, and manual volume management.
-- Data was stored in `.gz` files and loaded via MySQL scripts.
-- All new workflows use Python, PostgreSQL, and Docker Compose for a modern, unified ETL experience.
-
----
-
-**Contributions and PRs are welcome!**
-- 2023-12-04 JST
-  - First release.
-
-# What's This?
-
-EPSS is Exploit Prediction Scoreing Syste from FIRST ( https://www.first.org/epss/ ).
-
-I want to analyze EPSS, but I don't need to use SIEM, so I wanted something that could be analyzed using SQL.
-We thought it was important to first implement something simple and have it widely used.
-
-And The KEV catalog is now also included in the database. I think the range of use will be further expanded by combining it with EPSS's cveID.
-
-An environment where Docker can be executed is required.
-
-# System configuration
-
-## REQUIRE
-
-- docker
-- HOST disc space
-  - EPSS .csv.gz file  : 1[GB]
-  - EPSS mysql database: 40[GB]
-- Ability to write SQL statements ...
-
-## File and Directory
-
-
-```
-/opt/ExploitPulse
-|-- Documents
-|   |-- epss-graph.png
-|   `-- epss-graph_-a.png
-|-- LICENSE
-|-- README.md
-|-- docker
-|   |-- Dockerfile
-|   |-- README.md
-|   `-- env
-|-- epss-graph.sh
-|-- init-script
-|   |-- epss-init.sh
-|   |-- kev-init.sh
-|   `-- vulnrichment-init.sh
-|-- my.cnf
-|-- queryConsole.sh
-|-- skel
-|   `-- plot.plt
-|-- subprogram
-|   |-- epss-add.sh
-|   `-- vulnrichUpdate.sh
-|-- update-all.sh
-|-- update-epss.sh
-|-- update-kev.sh
-`-- update-vulnrich.sh
-```
-
-- epss-graph.sh
-  - Once you pass your CVE-ID, a graph will show you your EPSS and percentile changes over the past 180 days.
-- epss-data
-  - The contents differ depending on when the data was provided, so we save it separately in 1st/2nd/3rd directories.
-  - Download EPSS .gz data.
-  - and store MySQL Load file.
-- init-script/
-  - The first script to run when using EPSS, KEV Catalog, Vulnrichment.
-- my.cnf
-  - Settings for accessing the mysql console.
-- queryConsole.sh
-  - This is a script to easily open the mysql console.
-- skel
-  - skelton(template) file directory.
-- subprogram
-  - epss-add.sh
-    - This is a script that downloads data for a specific day and registers it in the database.
-  - vulnrichUpdate.sh
-- update-all.sh
-  - alias for execute all update script(update-epss/kev/vunrich)
-- update-epss.sh
-  - Update EPSS database.
-- update-kev.sh
-  - Update KEV Catalog database.
-- update-vulnrich.sh
-  - Update Vulnrichment database.
-
-
-
-# How to use this.
-
-## setup EPSS database
-
-Get Dockaer image
-
-```
-$ docker pull hogehuga/ExploitPulse
-```
-
-Create docker volume
-- mysql database data: `epssDB` volme
-- epss .csv.gz file: `epssFile` volume
-
-```
-$ docker volume create epssDB
-$ docker volume create epssFile
-```
-
-Run container
-- If you want to share the "share" directory for sharing analysis results, please add `-v <yourShredDirctory>:/opt/ExploitPulse/share`.
-  - eg. container:/opt/ExploitPulse/share , host sahred:/home/hogehuga/share. -> `-v /home/hogehuga/share:/opt/ExploitPulse/share`
-```
-$ docker container run --name epssdb -v epssDB:/var/lib/mysql -v epssFile:/opt/ExploitPulse/epss-data -e MYSQL_ROOT_PASSWORD=mysql -d hogehuga/ExploitPulse
-```
-
-Prepare the data
-```
-$ docker exec -it epssdb /bin/bash
-(work inside a container)
-# cd /opt/ExploitPulse/init-script
-# ./epss-init.sh
-```
-
-Once your data is ready, all you need to do is use it!
-
-
-### optional: KEV Catalog
-
-run EPSS container.
-
-Init for The KEV Catalog database.
-```
-$ docker exec -it epssdb /bin/bash
-(work inside a container)
-# cd /opt/ExploitPulse/init-script
-# ./kev-init.sh
-```
-
-### experimental: Vunlrichment
-
-run EPSS container
-
-Init for The Vulnrichment database
-```
-$ docker exec -it epssdb /bin/bash
-(work inside a container)
-# cd /opt/ExploitPulse/init-script
-# ./vulnrichment-init.sh
-```
-
-This script will:
-1. Create the necessary database tables
-2. Clone the official CISA Vulnrichment repository (https://github.com/cisagov/vulnrichment)
-
-
-## Data analysis: EPSS
-
-Enter the container and use SQL commands to perform analysis.
-
-```
-$ docker exec -it epssdb /bin/bash
-(work inside a container)
-# cd /opt/ExploitPulse
-# ./epssquery.sh
-mysql> select * from epssdb limit 1;
-+----+---------------+---------+------------+-------+------------+
-| id | cve           | epss    | percentile | model | date       |
-+----+---------------+---------+------------+-------+------------+
-|  1 | CVE-2020-5902 | 0.65117 |       NULL | NULL  | 2021-04-14 |
-+----+---------------+---------+------------+-------+------------+
-1 row in set (0.00 sec)
-
-mysql>
-```
-
-## epss-graph.sh
-
-Create EPSS and percentile charts and CSV data for the past 180 days.
-- Using the `-a` option will create the graph using all the data present in the database.
-- Data will be created under ./shera directory
-  - <CVE-ID>.csv: CSV data
-  - ExploitPulse<CVE-ID>.png: Graph
-  - skel-<CVE-ID>.plt: gnuplot script. Template is `./skel/plot.plt`
-
-If you want to change gnuplot options, edit the skel-<CVE-ID>.plt file.
-- edit skel-<CVE-ID>.plt file
-  - tile, tics, label, etc...
-- Pass skel to gnuplot and draw the graph.
-  - `# LANG=C.utf8 gnuplot skel-<CVE-ID>.plt`
-
-```
-# ./epss-graph.sh -cve "CVE-2022-27016"
-; -> ./share/CVE-2022-27016.csv (from:180 days ago)
-; -> ./share/ExploitPulseCVE-2022-27016.png
-
-# ./epss-graph.sh -cve "CVE-2022-27016" -a
-; -> Similar to above, but creates images for all registered periods
-
-```
-![period option true](./Documents/epss-graph.png)
-![period option false](./Documents/epss-graph_-a.png)
-
-
-## Update EPSS data
-
-Automatically registers data from the last registered data to the latest data in the database.
-
-```
-# ./epss-autoAdd.sh
-```
-
-## Update ExploitPulse
-
-`git pull origin` or rebuild container.
-
-```
-# cd /opt/ExploitPulse
-# git pull origin
-```
-
-```
-on HOST
-
-$ docker stop epssdb
-$ docker pull hogehuga/ExploitPulse
-$ docker container run --name epssdbNEWNAME -v epssDB:/var/lib/mysql -v epssFile:/opt/ExploitPulse/epss-data -e MYSQL_ROOT_PASSWORD=mysql -d hogehuga/ExploitPulse
-  ; Please specify the same value as last time
-
-NOTE:
-- Databases(/var/lib/mysql as "epssDB" docker volume) and files(/opt/ExploitPulse/epss-data as "epssFile" docker volume) will be inherited.
-```
-
-## Optional: KEV Catalog search
-
-At the moment, we are using SQL.
-
-```
-$ docker exec -it epssdb /bin/bash
-(work inside a container)
-# cd /opt/ExploitPulse
-# ./epssquery.sh
-mysql> select YEAR(dateAdded) as year, count(dateAdded) as count from kevcatalog group by year ;
-+------+-------+
-| year | count |
-+------+-------+
-| 2021 |   311 |
-| 2022 |   555 |
-| 2023 |   187 |
-| 2024 |    51 |
-+------+-------+
-4 rows in set (0.00 sec)
-
-mysql> select epssdb.cve, epssdb.epss, epssdb.percentile, kevcatalog.dateAdded, kevcatalog.vendorProject, kevcatalog.knownRansomwareCampaignUse from epssdb INNER JOIN kevcatalog ON epssdb.cve = kevcatalog.cveID where epssdb.cve="CVE-2021-44529" and epssdb.date="2024-04-20";
-+----------------+---------+------------+------------+---------------+----------------------------+
-| cve            | epss    | percentile | dateAdded  | vendorProject | knownRansomwareCampaignUse |
-+----------------+---------+------------+------------+---------------+----------------------------+
-| CVE-2021-44529 | 0.97068 |    0.99757 | 2024-03-25 | Ivanti        | Unknown                    |
-+----------------+---------+------------+------------+---------------+----------------------------+
-1 row in set (0.09 sec)
-
-mysql>
-```
-
-## Optional: KEV Catalog update
-
-Unlike CVSS etc., it does not provide differences, so please delete the database and re-register it.
-
-```
-# cd /opt/ExploitPulse
-# ./kev-refresh.sh
-CVE-nnnn-nnnn
-...
-#
-```
-
-- As of May 2024, it takes about 1 minute and 30 seconds to complete in my environment.
-
-
-## Experimental: Vulnrichment search
-
-```
-mysql> select adpSSVCAutomatable, count(*) from summary group by adpSSVCAutomatable;
-+--------------------+----------+
-| adpSSVCAutomatable | count(*) |
-+--------------------+----------+
-| no                 |     2653 |
-| Yes                |      558 |
-|                    |       41 |
-+--------------------+----------+
-3 rows in set (0.01 sec)
-
-mysql>
-```
-
-## Experimental: Vulnrichment update
-
-**Important**: Before running the update script for the first time, you must initialize the Vulnrichment database using the `vulnrichment-init.sh` script as described in the setup section above.
-
-To update the Vulnrichment data after initialization:
-
-```
-# cd /opt/ExploitPulse
-# ./update-vulnrich.sh
-```
-
-This script will:
-1. Pull the latest updates from the CISA Vulnrichment repository
-2. Process the JSON files into CSV format
-3. Import the data into the MySQL database
-
-## Experimental: Vulnrichment remove
-
-1. remove from database
-
-```
-# /opt/ExploitPulse/queryConsole.sh
-> drop table richment;
-```
-
-2. remove local repositories file
-
-```
-# rm -rf /opt/ExploitPulse/ulnrichment
-```
-
-
-# technical note
-
-## EPSS data
-
-| Field      | Type        |
-|:-----------|:------------|
-| id         | int         |
-| cve        | varchar(20) |
-| epss       | double      |
-| percentile | double      |
-| model      | varchar(20) |
-| date       | date        |
-
-## KEV Catalog data
-
-https://www.cisa.gov/known-exploited-vulnerabilities-catalog
-- Schema is https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities_schema.json
-
-|field                     |original json type|note                      |mysql Table  |
-|:-------------------------|:-----------------|:-------------------------|-------------|
-|id                        |(not exist)       |(for RDBMS)               |int, not Null|
-|cveID                     |string            |^CVE-[0-9]{4}-[0-9]{4,19}$|varchar(20)  |
-|vendorProject             |string            |                          |text         |
-|product                   |string            |                          |text         |
-|vulnerabilityName         |string            |                          |text         |
-|dateAdded                 |string            |format: YYYY-MM-DD        |date         |
-|shortDescription          |string            |                          |text         |
-|requiredAction            |string            |                          |text         |
-|dueDate                   |string            |format: YYYY-MM-DD        |date         |
-|knownRansomwareCampaignUse|string            |(Known or Unknown only?)  |text         |
-|notes                     |string            |                          |text         |
 
 # Test Suite
 
