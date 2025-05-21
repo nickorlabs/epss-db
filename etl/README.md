@@ -1,77 +1,46 @@
-# ExploitDB Importer (PostgreSQL Edition)
+# ETL V2: Canonical Vulnerability Ingestion Pipeline
 
-This script downloads and imports ExploitDB data into a PostgreSQL database using Python, Docker Compose, and the `COPY` command for efficient bulk import.
+## Overview
+This directory contains the next-generation (v2) ETL pipeline for ingesting, normalizing, and enriching vulnerability data from multiple sources into a unified, canonical PostgreSQL database. The goal is to enable robust analytics, deduplication, provenance tracking, and extensibility for future sources and enrichment layers.
 
-## Setup & Usage
+## Key Features
+- **Canonical schema** for all vulnerabilities (CVE, CNNVD, CNVD, OSV, GHSA, etc.)
+- **Provenance and deduplication**: Track all contributing sources and unique IDs
+- **Enrichment**: Store cross-linked risk scores (EPSS), KEV, exploits, and more
+- **Historical data**: Retain time series for EPSS and other enrichments
+- **Modular ETL scripts**: Each source has a dedicated, maintainable script
+- **Shared utilities**: Common logic for DB, logging, secrets, and upserts
 
-### 1. Prerequisites
-- Docker & Docker Compose installed
-
-### 2. Start the Database
-From the ETL directory, start the database and supporting containers:
-```bash
-docker compose up -d db
+## Directory Structure
+```
+etl_v2/
+  ├── README.md
+  ├── canonical_schema.sql
+  ├── etl_utils.py
+  ├── update_vulncheck.py
+  ├── .env.example
+  └── (future scripts)
 ```
 
-### 3. Run Each ETL Import Individually
-For best results (especially with large datasets), run each ETL update script one at a time. This makes troubleshooting easier and avoids resource contention.
+## Getting Started
+1. Create a new PostgreSQL database (e.g., `canonical_vulndb`).
+2. Apply `canonical_schema.sql` to set up the canonical table.
+3. Configure secrets and environment variables using `.env` or Docker secrets.
+4. Run the ETL scripts (start with `update_vulncheck.py`).
+5. Validate results and iterate.
 
-Example commands:
+## Contributing
+- Follow the v2 modular design and schema.
+- Document new sources, enrichments, or utility functions.
+- See the checklist in the project root for implementation steps.
 
-**Exploits:**
-```bash
-docker compose run --rm importer python update_exploitdb.py
-```
-**NVD:**
-```bash
-docker compose run --rm importer python update_nvd.py
-```
-**MITRE:**
-```bash
-docker compose run --rm importer python update_mitre.py
-```
-**EPSS:**
-```bash
-docker compose run --rm importer python update_epss.py
-```
-**KEV:**
-```bash
-docker compose run --rm importer python update_kev.py
-```
-**Vulnrichment:**
-```bash
-docker compose run --rm importer python update_vulnrich.py
-```
+---
 
-Repeat for any other ETL scripts as needed.
-
-> **Note:** Running `update_all.py` is not recommended for large imports or troubleshooting. Run each update individually for best results.
-
-### 3. Database Access
-- Default database: `epssdb`
-- **Database credentials are now securely stored using Docker secrets** (see `docker-compose.yml`).
-- To access the DB:
-  ```bash
-  docker compose exec db psql -U postgres -d epssdb
-  ```
-
-### 4. Customization
-- Edit `update_exploitdb.py`, `update_epss.py`, `update_kev.py`, `update_vulnrich.py`, or `update_all.py` for schema or logic changes.
-- Edit `docker-compose.yml` for service config.
-
-### 5. ML/Vector Support
-- The script enables the `pgvector` extension for future ML/vector search support.
-
-## Requirements
-- See `requirements.txt` (uses `psycopg2-binary` for PostgreSQL)
-
-## Notes
-- The ETL scripts use the `COPY` command for fast bulk loading.
-- All data is loaded into the appropriate tables (e.g., `exploits`, `epssdb`, `kevcatalog`, etc.).
-
-## Secure Credential Storage
-- Database credentials are managed via Docker secrets (`pg_user`, `pg_password`).
-- No credentials are hardcoded in code or environment variables.
-
-## Notes
-- The `.venv` directory is the standard convention for Python projects and should be gitignored for cleanliness.
+# Implementation Checklist
+- [ ] Database and schema setup
+- [ ] Shared utilities (`etl_utils.py`)
+- [ ] VulnCheck ingestion (`update_vulncheck.py`)
+- [ ] Enrichment/EPSS logic
+- [ ] Validation and testing
+- [ ] Documentation
+- [ ] Future sources (MITRE, NVD, OSV, etc.)
