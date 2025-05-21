@@ -10,3 +10,5 @@ etl/logs/*.log
 
 # Ignore secrets
 etl/secrets/*
+*.log
+archive/etl/logs/
