@@ -1,0 +1,60 @@
+services:
+  exploitpulse-db:
+    image: ankane/pgvector:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: canonical_vulndb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - canonical_v2_db_data:/var/lib/postgresql/data
+    secrets:
+      - pg_user
+      - pg_password
+      - nvd_api_key
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  exploitpulse-importer:
+    build:
+      context: ./etl
+      dockerfile: Dockerfile
+    volumes:
+      - ./etl:/scripts
+    working_dir: /scripts
+    depends_on:
+      exploitpulse-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: exploitpulse-db
+      DB_PORT: 5432
+      DB_NAME: canonical_vulndb
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    secrets:
+      - pg_user
+      - pg_password
+      - vulncheck_api_key
+      - nvd_api_key
+
+
+    # Example: set a default ETL job, or override with `docker compose run --rm importer ...`
+    # command: ["python", "update_vulncheck.py", "--index", "cnnvd", "--dry-run"]
+
+volumes:
+  canonical_v2_db_data:
+
+secrets:
+  pg_user:
+    file: ./etl/secrets/pg_user
+  pg_password:
+    file: ./etl/secrets/pg_password
+  vulncheck_api_key:
+    file: ./etl/secrets/vulncheck_api_key
+  nvd_api_key:
+    file: ./etl/secrets/nvd_api_key

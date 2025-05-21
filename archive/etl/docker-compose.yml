@@ -1,0 +1,157 @@
+services:
+  osv_nvd_convert:
+    build:
+      context: ./nvd2osv/osv.dev/vulnfeeds
+      dockerfile: cmd/nvd-cve-osv/Dockerfile
+    volumes:
+      - ./nvd-data:/nvd-data:rw
+      - ./nvd2osv/cpe_product_to_repo.json:/cpe_product_to_repo.json:ro
+      - ./nvd2osv/generated:/out:rw
+    command: >
+      sh -c '/usr/local/bin/nvd-cve-osv --cpe_repos /cpe_product_to_repo.json --nvd_json $(ls /nvd-data/nvdcve-1.1-*.json | tr "\n" " ") --out_dir /out'
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: epssdb
+    secrets:
+      - pg_user
+      - pg_password
+      - nvd_api_key
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  importer:
+    build:
+      context: .
+      dockerfile: Dockerfile.importer
+    volumes:
+      - ./:/scripts
+      - ./epss-data:/scripts/epss-data  # Dedicated persistent storage for ETL data
+      - /opt/epss-fork/etl/mitre-cvelistV5:/scripts/mitre-cvelistV5:rw
+    working_dir: /scripts
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGDATABASE: epssdb
+    secrets:
+      - pg_user
+      - pg_password
+      - nvd_api_key
+
+  epss_importer:
+    build:
+      context: .
+      dockerfile: Dockerfile.importer
+    volumes:
+      - ./:/scripts
+      - ./epss-data:/scripts/epss-data  # Dedicated persistent storage for ETL data
+      - /opt/epss-fork/etl/mitre-cvelistV5:/scripts/mitre-cvelistV5:rw
+      - ../../:/project_root
+    working_dir: /scripts
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGDATABASE: epssdb
+    secrets:
+      - pg_user
+      - pg_password
+      - nvd_api_key
+    command: ["python", "update_epss.py"]
+
+  kev_importer:
+    build:
+      context: .
+      dockerfile: Dockerfile.importer
+    volumes:
+      - ./:/scripts
+      - ./epss-data:/scripts/epss-data  # Dedicated persistent storage for ETL data
+      - /opt/epss-fork/etl/mitre-cvelistV5:/scripts/mitre-cvelistV5:rw
+      - ../../:/project_root
+    working_dir: /scripts
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGDATABASE: epssdb
+    secrets:
+      - pg_user
+      - pg_password
+      - nvd_api_key
+    command: ["python", "update_kev.py"]
+
+  vulnrich_importer:
+    build:
+      context: .
+      dockerfile: Dockerfile.importer
+    volumes:
+      - ./:/scripts
+      - ./epss-data:/scripts/epss-data  # Dedicated persistent storage for ETL data
+      - /opt/epss-fork/etl/mitre-cvelistV5:/scripts/mitre-cvelistV5:rw
+      - ../../:/project_root
+    working_dir: /scripts
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGDATABASE: epssdb
+    secrets:
+      - pg_user
+      - pg_password
+      - nvd_api_key
+    command: ["python", "update_vulnrich.py"]
+
+  # If you ever need to build a custom DB image (e.g., for extensions), uncomment below:
+  # db:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.db
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: epssdb
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+
+
+
+  # Duplicate epss_importer removed; use the custom-image-based epss_importer above.
+
+
+  # Legacy kev_importer removed; see above for new kev_importer running update_kev.py
+  update_all:
+    build:
+      context: .
+      dockerfile: Dockerfile.importer
+    volumes:
+      - ./:/scripts
+      - ./epss-data:/scripts/epss-data  # Dedicated persistent storage for ETL data
+      - /opt/epss-fork/etl/mitre-cvelistV5:/scripts/mitre-cvelistV5:rw
+    working_dir: /scripts
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGDATABASE: epssdb
+    secrets:
+      - pg_user
+      - pg_password
+      - nvd_api_key
+    command: ["python", "update_all.py"]
+    # Note: No restart policy for ETL jobs; they should exit after completion.
+
+volumes:
+  pgdata:
+
+# Docker secrets for DB credentials
+secrets:
+  pg_user:
+    file: ./secrets/pg_user
+  pg_password:
+    file: ./secrets/pg_password
+  nvd_api_key:
+    file: ./secrets/nvd_api_key

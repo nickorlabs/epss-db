@@ -1,0 +1,209 @@
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+Traceback (most recent call last):
+  File "/scripts/update_epss.py", line 162, in <module>
+    main()
+  File "/scripts/update_epss.py", line 149, in main
+    rows = preprocess_csv(csv_file, date_str)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scripts/update_epss.py", line 84, in preprocess_csv
+    with open(csv_file, 'r', encoding='utf-8') as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/scripts/epss-data/epss_scores-2022-02-05.csv'
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 1 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
+Traceback (most recent call last):
+  File "/scripts/update_epss.py", line 172, in <module>
+    main()
+  File "/scripts/update_epss.py", line 161, in main
+    import_to_postgres(rows)
+  File "/scripts/update_epss.py", line 104, in import_to_postgres
+    ensure_cve_exists(conn, row[0], source='epss')
+  File "/scripts/cve_utils.py", line 11, in ensure_cve_exists
+    cur.execute("""
+psycopg2.errors.DeadlockDetected: deadlock detected
+DETAIL:  Process 35 waits for ShareLock on transaction 13312400; blocked by process 37.
+Process 37 waits for ShareLock on transaction 13312399; blocked by process 35.
+HINT:  See server log for query details.
+CONTEXT:  while inserting index tuple (18,21) in relation "cve"
+
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 1 ===
+Starting update_epss.py
+2025-05-13 23:07:13,923 INFO Starting update_epss.py
+2025-05-13 23:07:35,317 INFO Auto data import: 2025-05-14 to 2025-05-14
+2025-05-13 23:07:35,318 INFO Auto data import finished.
+
+=== Running /scripts/update_epss.py ===
+[DEBUG] About to run: ['/usr/local/bin/python', '/scripts/update_epss.py']
+[DEBUG] Current working dir: /scripts
+
+=== Finished /scripts/update_epss.py with exit code 0 ===
