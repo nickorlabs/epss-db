@@ -1,14 +1,22 @@
-FROM mysql:latest
+FROM python:3.11-slim
 
-RUN microdnf install git wget vim jq
-RUN sed -i "s/^\(secure-file-priv\=\).*/\1\/opt\/epss-db\/epss-data/g" /etc/my.cnf
-RUN cd /opt && git clone https://github.com/hogehuga/epss-db
-RUN cp /opt/epss-db/docker/env/.bashrc /root
-RUN mkdir -p /opt/epss-db/share /opt/epss-db/epss-data
+# Install system dependencies for psycopg2
+RUN apt-get update && apt-get install -y gcc libpq-dev curl && rm -rf /var/lib/apt/lists/*
 
-# Add non-root user and set permissions
-RUN useradd -m epssuser \
-    && chown -R epssuser:epssuser /opt/epss-db/share /opt/epss-db/epss-data /opt/epss-db/my.cnf || true \
-    && chmod 700 /opt/epss-db/my.cnf || true
+WORKDIR /scripts
 
-USER epssuser
+# Ensure project root is on the Python path for ETL imports
+ENV PYTHONPATH=/scripts
+
+# Install Python dependencies (add others as needed)
+RUN pip install --no-cache-dir psycopg2-binary requests vulncheck_sdk
+
+# Add wait-for-it script
+RUN curl -sSL -o /wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh \
+    && chmod +x /wait-for-it.sh
+
+# Copy the entire ETL package
+COPY ../etl /scripts/etl
+
+# Default command (override in docker-compose)
+CMD ["python", "--version"]

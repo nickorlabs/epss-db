@@ -1,0 +1,49 @@
+version: '3.8'
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: exploitpulse
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    secrets:
+      - pg_user
+      - pg_password
+      - nvd_api_key
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  exploitpulse_importer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - /opt/exploitpulse/etl/secrets:/run/secrets:ro
+      - /opt/exploitpulse/etl-data:/etl-data
+    working_dir: /scripts
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGDATABASE: exploitpulse
+    command: ["/wait-for-it.sh", "db:5432", "--"]
+
+  # Add additional VulnCheck importers as needed
+  # vulncheck_exploited_importer:
+  #   ...
+
+volumes:
+  pgdata:
+
+secrets:
+  pg_user:
+    file: ../etl/secrets/pg_user
+  pg_password:
+    file: ../etl/secrets/pg_password
+  nvd_api_key:
+    file: ../etl/secrets/nvd_api_key
+  vulncheck_api_key:
+    file: ../etl/secrets/vulncheck_api_key
