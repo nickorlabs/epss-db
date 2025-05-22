@@ -29,6 +29,30 @@ ExploitPulse supports scheduled (e.g., daily or hourly via cron) or on-demand ET
 
 ---
 
+## Upcoming Implementation Plans (2025)
+
+We are expanding ExploitPulse to include:
+
+- **VulnDB and Vuln Intel Feeds:**
+  - Integrate additional commercial and open-source vulnerability intelligence feeds (e.g., VulnDB, other threat/vuln intel sources).
+  - Each new feed will have its own ETL script, initially dumping to JSON for normalization review.
+  - Once all feeds are in place, we will unify normalization logic for consistent downstream processing and database integration.
+
+- **LEV (Likely Exploited Vulnerabilities):**
+  - Implement labeling and enrichment of "Likely Exploited Vulnerabilities (LEV)" in alignment with [NIST CSWP 41](https://nvlpubs.nist.gov/nistpubs/CSWP/NIST.CSWP.41.pdf).
+  - LEV status will be determined by aggregating authoritative sources (e.g., CISA KEV, VulnDB, threat intel feeds) and applying the methodology described by NIST and partner advisories.
+  - The LEV indicator will be available as a field in the unified vulnerability table and exposed in analytics and API endpoints.
+
+- **Unified Data Model:**
+  - After all feeds are normalized, we will finalize a canonical schema for all vulnerability data, supporting advanced analytics and enrichment.
+
+- **Review & Refactor:**
+  - All new and existing ETL scripts will be reviewed for consistent error handling, logging, and DB integration.
+
+If you are interested in contributing to VulnDB, Vuln Intel, or LEV integration, please see the [CONTRIBUTING.md](CONTRIBUTING.md) and [ROADMAP.md](ROADMAP.md) files for more details.
+
+---
+
 ## Secret Management & Security
 - **Secrets, API keys, and passwords must never be committed to the repository.**
 - All sensitive values are managed via Docker secrets or environment variables.
