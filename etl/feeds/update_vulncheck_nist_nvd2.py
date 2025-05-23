@@ -41,10 +41,24 @@ def main():
         indices_client = vulncheck_sdk.IndicesApi(api_client)
         all_records = fetch_paginated(indices_client.index_nist_nvd2_get, limit=300)
     print(f"Fetched {len(all_records)} NIST NVD v2 records from VulnCheck")
+    # Dump raw API response
+    raw_output_path = "/etl-data/raw/vulncheck_nvd_api_raw_dump.json"
+    def to_dict(entry):
+        if hasattr(entry, "model_dump"):
+            return entry.model_dump()
+        elif hasattr(entry, "dict"):
+            return entry.dict()
+        elif isinstance(entry, dict):
+            return entry
+        else:
+            return dict(entry)
+    write_json([to_dict(e) for e in all_records], raw_output_path)
+    print(f"Dumped raw VulnCheck NVD API data to {raw_output_path}")
+    # Normalize and dump
     normalized = [normalize(entry) for entry in all_records]
-    output_path = "/etl-data/vulncheck_nist_nvd2_dump.json"
-    write_json(normalized, output_path)
-    print(f"Dumped normalized NIST NVD v2 data to {output_path}")
+    normalized_output_path = "/etl-data/normalized/vulncheck_nvd_normalized_dump.json"
+    write_json(normalized, normalized_output_path)
+    print(f"Dumped normalized NIST NVD v2 data to {normalized_output_path}")
 
 if __name__ == "__main__":
     main()

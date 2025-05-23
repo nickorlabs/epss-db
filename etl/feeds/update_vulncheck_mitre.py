@@ -70,6 +70,11 @@ def main():
             break
         time.sleep(0.2)  # be nice to the API
     print(f"Fetched {len(all_records)} MITRE CVE List v5 records from VulnCheck (before normalization)")
+    # Dump raw API response
+    raw_output_path = "/etl-data/raw/vulncheck_mitre_api_raw_dump.json"
+    write_json(all_records, raw_output_path)
+    print(f"Dumped raw VulnCheck MITRE API data to {raw_output_path}")
+    # Normalize and dump
     normalized = []
     failed = 0
     for entry in all_records:
@@ -79,9 +84,9 @@ def main():
             failed += 1
             logging.error(f"Normalization failed for entry: {entry.get('cve', None) or entry.get('id', None)}: {e}")
     print(f"Successfully normalized {len(normalized)} records. Failed: {failed}")
-    output_path = "/etl-data/vulncheck_mitre_dump.json"
-    write_json(normalized, output_path)
-    print(f"Dumped normalized MITRE CVE List v5 data to {output_path}")
+    normalized_output_path = "/etl-data/normalized/vulncheck_mitre_normalized_dump.json"
+    write_json(normalized, normalized_output_path)
+    print(f"Dumped normalized MITRE CVE List v5 data to {normalized_output_path}")
 
 if __name__ == "__main__":
     main()
