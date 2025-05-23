@@ -1,4 +1,7 @@
 # requirements.txt pinned for reproducibility (2025-05-07)
 psycopg2-binary==2.9.10
-requests==2.32.3
+requests
+vulncheck_sdk
+PyYAML
+xmltodict
 tenacity==8.2.2
