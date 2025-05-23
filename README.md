@@ -29,27 +29,12 @@ ExploitPulse supports scheduled (e.g., daily or hourly via cron) or on-demand ET
 
 ---
 
-## Upcoming Implementation Plans (2025)
+## Supported & Planned Feeds
 
-We are expanding ExploitPulse to include:
+The full, up-to-date list of all implemented and planned ETL feeds—including their status, source, and coverage—is maintained in [`etl/feeds/README.md`](etl/feeds/README.md). This file serves as the canonical reference for all vulnerability data sources (CVE, CPE, CWE, KEV, NVD, ExploitDB, Vulnrichment, etc.) supported by ExploitPulse.
 
-- **VulnDB and Vuln Intel Feeds:**
-  - Integrate additional commercial and open-source vulnerability intelligence feeds (e.g., VulnDB, other threat/vuln intel sources).
-  - Each new feed will have its own ETL script, initially dumping to JSON for normalization review.
-  - Once all feeds are in place, we will unify normalization logic for consistent downstream processing and database integration.
-
-- **LEV (Likely Exploited Vulnerabilities):**
-  - Implement labeling and enrichment of "Likely Exploited Vulnerabilities (LEV)" in alignment with [NIST CSWP 41](https://nvlpubs.nist.gov/nistpubs/CSWP/NIST.CSWP.41.pdf).
-  - LEV status will be determined by aggregating authoritative sources (e.g., CISA KEV, VulnDB, threat intel feeds) and applying the methodology described by NIST and partner advisories.
-  - The LEV indicator will be available as a field in the unified vulnerability table and exposed in analytics and API endpoints.
-
-- **Unified Data Model:**
-  - After all feeds are normalized, we will finalize a canonical schema for all vulnerability data, supporting advanced analytics and enrichment.
-
-- **Review & Refactor:**
-  - All new and existing ETL scripts will be reviewed for consistent error handling, logging, and DB integration.
-
-If you are interested in contributing to VulnDB, Vuln Intel, or LEV integration, please see the [CONTRIBUTING.md](CONTRIBUTING.md) and [ROADMAP.md](ROADMAP.md) files for more details.
+- **To see the current feed coverage, implementation status, and roadmap,** refer to [`etl/feeds/README.md`](etl/feeds/README.md).
+- This file is regularly updated as new feeds are added or changes are made to the ETL pipeline.
 
 ---
 
@@ -77,6 +62,8 @@ If you are interested in contributing to VulnDB, Vuln Intel, or LEV integration,
 /opt/ExploitPulse/
 ├── README.md, LICENSE, PULL_REQUEST.md
 ├── etl/
+│   ├── feeds/
+│   │   └── README.md   # Canonical list of all implemented and planned feeds, with status and details
 │   ├── Dockerfile.importer
 │   ├── docker-compose.yml
 │   ├── requirements.txt
@@ -93,6 +80,8 @@ If you are interested in contributing to VulnDB, Vuln Intel, or LEV integration,
 ├── docker/, docs/, tests/
 └── ...
 ```
+
+For the latest feed coverage and implementation status, see [`etl/feeds/README.md`](etl/feeds/README.md).
 
 ---
 

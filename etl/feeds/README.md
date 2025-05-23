@@ -19,44 +19,55 @@ The following table lists all ETL scripts present in this folder, the feed they 
 | update_osv.py                     | OSV                                               | Implemented   |
 | update_cpe_dictionary.py          | NVD CPE Dictionary                                | Implemented   |
 | update_cwe.py                     | CWE                                               | Implemented   |
-| update_exploitdb.py                | Exploit-DB (exploitdb.com, CSV+repo)              | Implemented   |
-| update_cisa_vulnrichment.py        | CISA Vulnrichment (GitHub enrichment repo)        | Implemented   |
+| update_exploitdb.py                | Exploit-DB (exploitdb.com, CSV+repo)             | Implemented   |
+| update_cisa_vulnrichment.py        | CISA Vulnrichment (GitHub enrichment repo)       | Implemented   |
 | update_cnnvd.py                   | CNNVD                                             | Removed       |
 | update_vulncheck_nist_nvd1.py     | VulnCheck NVD 1.0                                 | Removed       |
 
 _All feeds listed below are zero‑cost; cite attribution where licences request it._
-
-| # | Feed | Scope / What it covers | Access pattern | Update cadence | Licence / Notes | Status |
-|---|---|---|---|---|---|---|
-| **A 1** | **VulnCheck NVD++ – NIST NVD 2.0** | NVD 2.0 JSON mirrored by VulnCheck; added CPE rows | api.vulncheck.com/v3/backup/**nist‑nvd2** | Hourly | Free w/ token | Implemented |
-| **A 2** | **VulnCheck NVD++ – NIST NVD 1.0 (legacy)** | Long‑term copy of retired 1.0 format | api.vulncheck.com/v3/backup/**nist‑nvd** | Hourly | Free w/ token | Removed |
-| **A 3** | **VulnCheck NVD++ – MITRE CVE List V5** | MITRE JSON 5 files served via VulnCheck | api.vulncheck.com/v3/backup/**mitre‑cvelist‑v5** | Hourly | Free w/ token | Implemented |
-| **B 1** | **NIST NVD 2.0 (canonical)** | Authoritative U.S. NVD JSON 1.1 feeds | nvd.nist.gov/feeds/json/cve/1.1/ (+ free API) | Hourly sync | Public domain | Implemented |
-| **B 2** | **MITRE CVE List V5 (canonical)** | Live CVE Program repo (JSON‑5) | github.com/CVEProject/cvelistV5 (Git) | ~7 min pushes | Public domain | Implemented |
-| **B 3** | **CloudVulnDB / open‑cvdb** | Cloud‑service vulnerabilities (AWS, Azure, GCP, …) | github.com/wiz-sec/open-cvdb (Git) | Hourly | CC‑BY 4.0 | Implemented |
-| **B 4** | **GitHub Security Advisories (GHSA)** | Package‑level advisories across 15+ ecosystems | GitHub GraphQL `advisoryDatabase` / REST `/advisories` | Continuous | CC‑BY 4.0; token rate‑limit | Implemented |
-| **B 5** | **GitLab Advisory Database (OSS edition)** | Dependency & container vulns | gitlab.com/gitlab-org/security-products/advisory-database (Git) | Hourly | MIT; 30‑day lag vs. SaaS feed | Planned |
-| **B 6** | **Open Source Vulnerabilities (OSV)** | OSV‑format advisories for Debian, PyPI, npm, Rust, etc. | api.osv.dev/v1/vulns  or all.zip snapshot | Hourly API / Daily dump | CC0 (data); some repos CC‑BY | Planned |
-| **B 7** | **NVD CPE Dictionary (official)** | Standardised product identifiers & deprecations | nvd.nist.gov/feeds/json/cpe/1.0/ | With each NVD push | Public domain | Implemented |
-
 ---
 
 # Vulnerability‑Intelligence Source List  
 _All sources below are zero‑cost for commercial use unless otherwise noted.  
 URLs appear without the `https://` scheme for quick copy/paste._
 
-## 1  Risk & Prioritisation Feeds
-| Feed | What it adds | Access pattern | Update cadence | Licence / Notes |
-|---|---|---|---|---|
-| **VulnCheck KEV** | Superset of CISA‑KEV (known‑exploited CVEs) | api.vulncheck.com/v3/backup/**vulncheck‑kev**  or `/index/vulncheck‑kev?pubstartdate=` | Hourly | Free w/ Community token & attribution |
-| **CISA KEV** | CVEs exploited in the wild | cisa.gov/known-exploited-vulnerabilities‑catalog (JSON / CSV) | Weekdays | Public domain |
-| **CISA Vulnrichment (SSVC)** | SSVC decision points + CWE / CVSS enrichments for new CVEs | github.com/cisagov/vulnrichment (Git) | Continuous commits | CC0 (public domain) |
-| **EPSS** | 30‑day exploit‑probability scores | api.first.org/epss (REST) or first.org/epss/data.csv | Daily | CC‑BY‑4.0 |
-| **Anchore NVD Data Overrides** | Fixes missing CPE / CVSS in NVD | github.com/anchore/nvd-data-overrides (Git) | Daily | CC0 |
-| **NIST Official CPE Dictionary** | Authoritative CPE names & deprecated‑by chains | nvd.nist.gov/feeds/json/cpe/1.0/ (JSON ZIP) | With each NVD push | U.S.‑Gov public data |
-| **MITRE CWE** | Weakness taxonomy for root‑cause tagging | cwe.mitre.org/data/downloads.html (CSV / XML) | 2–3× yr | Public domain |
+## 1  Vulnerability Databases & Prioritization Feeds
+This section consolidates all foundational vulnerability databases and risk/prioritization feeds. These sources provide the core CVE, CWE, CPE, and enrichment data, as well as prioritization signals used for downstream analytics, enrichment, and alerting.
 
-## 2  Exploit‑Code Repositories
+### CVE-to-CPE Mapping
+A critical step in vulnerability intelligence is mapping CVEs (vulnerabilities) to CPEs (affected products/platforms). This enables:
+- Asset impact analysis (which CVEs affect your environment)
+- Automated patching and risk workflows
+- Accurate enrichment and correlation with exploits, telemetry, and inventory
+
+**Primary sources:**
+- NIST NVD feeds: Each CVE entry includes affected CPEs and version ranges
+- VulnCheck NVD++: Adds corrections and enrichment to NVD's mapping
+- Anchore NVD Data Overrides: Fixes missing or incorrect CPEs
+- CISA Vulnrichment: May clarify affected platforms for critical vulns
+
+Our ETL extracts and maintains a dedicated CVE-to-CPE mapping for downstream use.
+
+| Feed | What it covers / adds | Access / Pattern | Update cadence | Licence / Notes |
+|---|---|---|---|---|
+| **NIST NVD** | Authoritative U.S. government CVE database | nvd.nist.gov/feeds/json/cve/1.1/ | Hourly | Public domain |
+| **MITRE CVE List** | Canonical CVE assignments | github.com/CVEProject/cvelistV5 | ~7 min pushes | Public domain |
+| **GitHub Security Advisories (GHSA)** | Package-level advisories | GitHub GraphQL/REST | Continuous | CC-BY 4.0 |
+| **GitLab Advisory Database** | Dependency & container advisories | gitlab.com/gitlab-org/security-products/advisory-database | Hourly | MIT |
+| **Open Source Vulnerabilities (OSV)** | Multi-ecosystem advisories | api.osv.dev/v1/vulns or all.zip | Hourly | CC0/CC-BY |
+| **CloudVulnDB / open-cvdb** | Cloud-service vulnerabilities | github.com/wiz-sec/open-cvdb | Hourly | CC-BY 4.0 |
+| **NVD CPE Dictionary** | Standardized product identifiers & deprecated-by chains | nvd.nist.gov/feeds/json/cpe/1.0/ | With NVD push | Public domain |
+| **MITRE CWE** | Weakness taxonomy for root-cause tagging | cwe.mitre.org/data/downloads.html | 2–3× yr | Public domain |
+| **VulnCheck KEV** | Superset of CISA‑KEV (known‑exploited CVEs) | api.vulncheck.com/v3/backup/**vulncheck‑kev** or `/index/vulncheck‑kev?pubstartdate=` | Hourly | Free w/ Community token & attribution |
+| **CISA KEV** | CVEs exploited in the wild | cisa.gov/known-exploited-vulnerabilities‑catalog (JSON/CSV) | Weekdays | Public domain |
+| **CISA Vulnrichment (SSVC)** | SSVC decision points + CWE / CVSS enrichments for new CVEs | github.com/cisagov/vulnrichment (Git) | Continuous commits | CC0 (public domain) |
+| **EPSS** | 30‑day exploit‑probability scores | api.first.org/epss (REST) or first.org/epss/data.csv | Daily | CC‑BY‑4.0 |
+| **Anchore NVD Data Overrides** | Fixes missing CPE / CVSS in NVD | github.com/anchore/nvd-data-overrides (Git) | Daily | CC0 |
+
+
+## 2  Exploit-Code Repositories
+These sources provide proof-of-concept and weaponized exploit code for known vulnerabilities. They are prioritized here for enrichment and risk validation.
+
 | Feed | Scope | Access | Cadence | Licence / Notes |
 |---|---|---|---|---|
 | **Exploit‑DB** | ≈ 100 new PoCs / month | gitlab.com/exploit-database/exploitdb | Hourly Git pull | GPL‑2 |
