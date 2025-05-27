@@ -148,7 +148,7 @@ To request a new feed integration, suggest a candidate, or contribute an ETL scr
 | Script Name                       | Feed Source / Description                          | Status        |
 |-----------------------------------|---------------------------------------------------|---------------|
 | update_ghsa_graphql.py            | GitHub Security Advisories (GHSA, GraphQL)        | Implemented   |
-| update_kev.py                     | CISA Known Exploited Vulnerabilities (KEV)        | Implemented   |
+| update_cisa_known_exploited.py                     | CISA Known Exploited Vulnerabilities (KEV)        | Implemented   |
 | update_mitre.py                   | MITRE CVE List V5                                 | Implemented   |
 | update_nvd_v2.py                  | NIST NVD 2.0                                      | Implemented   |
 | update_opencvdb.py                | CloudVulnDB / open-cvdb                           | Implemented   |
