@@ -24,28 +24,27 @@ This folder contains ETL scripts and documentation for integrating, normalizing,
 
 ---
 
-## Candidate Feeds (Planned / Not Implemented)
+## Candidate Feeds (In Progress / Planned)
 | Feed/Source               | Type/Focus                    | Access/URL                                             | Status/Notes                     |
 |--------------------------|-------------------------------|--------------------------------------------------------|----------------------------------|
-| Vapid Labs                | Exploits/Advisories           | https://vapid.labs/                                    | No structured feed; scraping needed |
-| 0day.today                | Exploits/Advisories           | https://0day.today/                                    | No structured feed; scraping needed |
-| CERT/CC                   | Advisories                    | https://www.cisa.gov/uscert/                            | RSS available                    |
-| Rapid7                    | Advisories/Vulns              | https://www.rapid7.com/db/                              | Web only; scraping possible       |
-| Cisco Security Advisories | Advisories                    | https://tools.cisco.com/security/center/publicationListing.x | RSS available                    |
-| Microsoft MSRC            | Advisories                    | https://msrc.microsoft.com/update-guide/rss             | RSS available                    |
-| Oracle Security Alerts    | Advisories                    | https://www.oracle.com/security-alerts/                 | RSS available                    |
-| IBM PSIRT                 | Advisories                    | https://www.ibm.com/support/pages/ibm-product-security-incident-response-team-psirt | RSS available |
-| Adobe Security Bulletins  | Advisories                    | https://helpx.adobe.com/security.html                   | RSS available                    |
-| VirusTotal                | Malware/URL/IP Reputation     | https://virustotal.com                                  | API, key required                |
-| Cisco Talos               | Threat Intel/Advisories       | https://talosintelligence.com                           | Feeds, advisories, API           |
-| OTX (LevelBlue Labs)      | Threat Intel/IoCs             | https://otx.alienvault.com                              | API, CSV, OpenIoC, STIX          |
-| Spamhaus                  | Blocklists                    | https://www.spamhaus.org                                | Downloadable lists               |
-| OpenPhish                 | Phishing                      | https://openphish.com                                   | Free/premium, CSV, API           |
-| CrowdSec                  | Malicious IPs                 | https://www.crowdsec.net                                | API, global coverage             |
-| Cyber Cure                | IoCs/Malware/URLs             | https://www.cybercure.ai                                | API, actionable IoCs             |
-| HoneyDB                   | Honeypot/Attack Telemetry     | https://honeydb.io                                      | API, bad hosts, payloads         |
-| CISA AIS                  | Vulns/IoCs/TTPs               | https://www.cisa.gov/ais                                | STIX/TAXII, machine-readable     |
-| Blocklist.de              | Server Attacks                | https://blocklist.de                                    | Downloadable lists               |
+| CERT/CC                   | Advisories                    | https://www.cisa.gov/uscert/                            | In Progress (RSS available)      |
+| Rapid7                    | Advisories/Vulns              | https://www.rapid7.com/db/                              | In Progress (Web only; scraping possible) |
+| Cisco Security Advisories | Advisories                    | https://tools.cisco.com/security/center/publicationListing.x | In Progress (RSS available)      |
+| Microsoft MSRC            | Advisories                    | https://msrc.microsoft.com/update-guide/rss             | In Progress (RSS available)      |
+| Oracle Security Alerts    | Advisories                    | https://www.oracle.com/security-alerts/                 | In Progress (RSS available)      |
+| IBM PSIRT                 | Advisories                    | https://www.ibm.com/support/pages/ibm-product-security-incident-response-team-psirt | In Progress (RSS available)      |
+| Adobe Security Bulletins  | Advisories                    | https://helpx.adobe.com/security.html                   | In Progress (RSS available)      |
+| AlienVault OTX            | Threat Intel/IoCs             | https://otx.alienvault.com                              | In Progress (API, CSV, OpenIoC, STIX) |
+| Spamhaus                  | Blocklists                    | https://www.spamhaus.org                                | In Progress (Downloadable lists) |
+| OpenPhish                 | Phishing                      | https://openphish.com                                   | In Progress (Free/premium, CSV, API) |
+| VirusTotal                | Malware/URL/IP Reputation     | https://virustotal.com                                  | In Progress (API, key required)  |
+| CrowdSec                  | Malicious IPs                 | https://www.crowdsec.net                                | In Progress (API, global coverage) |
+| Cyber Cure                | IoCs/Malware/URLs             | https://www.cybercure.ai                                | In Progress (API, actionable IoCs) |
+| HoneyDB                   | Honeypot/Attack Telemetry     | https://honeydb.io                                      | In Progress (API, bad hosts, payloads) |
+| CISA AIS                  | Vulns/IoCs/TTPs               | https://www.cisa.gov/ais                                | In Progress (STIX/TAXII, machine-readable) |
+| Blocklist.de              | Server Attacks                | https://blocklist.de                                    | In Progress (Downloadable lists) |
+
+_Note: The above table reflects current priorities and in-progress work for new ETL integrations._
 | FBI InfraGard             | Critical Infrastructure       | https://www.infragard.org                               | Sector-specific, registration    |
 | abuse.ch URLhaus          | Malicious URLs/Domains        | https://urlhaus.abuse.ch                                | Feeds, APIs, ASN/country/TLD     |
 | ELLIO                      | IP Blocklists                 | https://ellio.tech                                      | Frequent updates                 |
@@ -82,28 +81,28 @@ This folder contains ETL scripts and documentation for integrating, normalizing,
 | Icewater                  | Threat Intel Tool              | https://github.com/SupportIntelligence/Icewater          | Tool, not a feed                 |
 | Infosec CERT-PA           | Malware/Blocklists/Vuln DB    | https://infosec.cert-pa.it                               | Feeds, DB                        |
 | InQuest Labs              | Malware/Threat Analysis        | https://labs.inquest.net                                 | Feeds                            |
-| I-Blocklist               | IP Blocklists                 | https://www.iblocklist.com/lists                         | Lists                            |
+| I-Blocklist               | IP Blocklists                 | https://www.iblocklist.com/lists                                  | Lists                            |
 | IPsum                     | IP Blocklist                  | https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt | List                      |
-| James Brine Threat Feeds  | Threat Feeds                  | https://jamesbrine.com.au                                | Feeds                            |
+| James Brine Threat Feeds  | Threat Feeds                  | https://jamesbrine.com.au                                         | Feeds                            |
 | Kaspersky Threat Data Feeds| Threat Data (Commercial)      | https://support.kaspersky.com/datafeeds                   | Registration required            |
 | Majestic Million          | Top Domains                   | https://majestic.com/reports/majestic-million            | List                             |
-| Maldatabase               | Malware Samples               | https://maldatabase.com/                                 | Feed                             |
-| Malpedia                  | Malware Encyclopedia          | https://malpedia.caad.fkie.fraunhofer.de/                | DB, API                          |
-| MalShare.com              | Malware Samples               | http://www.malshare.com/                                 | API                              |
-| Maltiverse                | Threat Intel                  | https://www.maltiverse.com/                              | API                              |
-| MalwareBazaar (abuse.ch)  | Malware Samples               | https://bazaar.abuse.ch/                                 | API                              |
-| Malware Domain List       | Malicious Domains             | https://www.malwaredomainlist.com/                       | List                             |
-| Malware Patrol            | Malware Feeds                 | https://www.malwarepatrol.net/                           | API                              |
-| Malware-Traffic-Analysis.net | Malware Traffic Samples     | https://malware-traffic-analysis.net/                    | Samples                          |
-| MalwareDomains.com        | Malicious Domains             | http://www.malwaredomains.com/                           | List                             |
+| Maldatabase               | Malware Samples               | https://maldatabase.com/                                   | Feed                             |
+| Malpedia                  | Malware Encyclopedia          | https://malpedia.caad.fkie.fraunhofer.de/                  | DB, API                          |
+| MalShare.com              | Malware Samples               | http://www.malshare.com/                                   | API                              |
+| Maltiverse                | Threat Intel                  | https://www.maltiverse.com/                                | API                              |
+| MalwareBazaar (abuse.ch)  | Malware Samples               | https://bazaar.abuse.ch/                                   | API                              |
+| Malware Domain List       | Malicious Domains             | https://www.malwaredomainlist.com/                         | List                             |
+| Malware Patrol            | Malware Feeds                 | https://www.malwarepatrol.net/                             | API                              |
+| Malware-Traffic-Analysis.net | Malware Traffic Samples     | https://malware-traffic-analysis.net/                     | Samples                          |
+| MalwareDomains.com        | Malicious Domains             | http://www.malwaredomains.com/                             | List                             |
 | MetaDefender Cloud        | Threat Intelligence Feed      | https://www.opswat.com/developers/threat-intelligence-feed | API                           |
-| Netlab OpenData Project   | Threat Data/C2                | https://blog.netlab.360.com/tag/english/                 | Feeds                            |
-| NoThink!                  | Malicious IPs                 | http://www.nothink.org                                   | Blocklists                       |
-| NormShield Services       | Threat Intelligence           | https://services.normshield.com                          | API                              |
-| NovaSense Threats         | Threat Feeds                  | https://novasense-threats.com                            | Feeds                            |
-| Obstracts                 | Threat Intelligence           | https://www.obstracts.com/                               | API                              |
-| Vulners                   | Vuln Aggregator               | https://vulners.com                                      | API                              |
-| Pulsedive                 | Threat Intelligence           | https://pulsedive.com                                    | API                              |
+| Netlab OpenData Project   | Threat Data/C2                | https://blog.netlab.360.com/tag/english/                   | Feeds                            |
+| NoThink!                  | Malicious IPs                 | http://www.nothink.org                                     | Blocklists                       |
+| NormShield Services       | Threat Intelligence           | https://services.normshield.com                            | API                              |
+| NovaSense Threats         | Threat Feeds                  | https://novasense-threats.com                              | Feeds                            |
+| Obstracts                 | Threat Intelligence           | https://www.obstracts.com/                                 | API                              |
+| Vulners                   | Vuln Aggregator               | https://vulners.com                                        | API                              |
+| Pulsedive                 | Threat Intelligence           | https://pulsedive.com                                      | API                              |
 | AlienVault OTX            | Threat Intelligence           | https://www.alienvault.com                               | API                              |
 | PolySwarm                 | Malware/Threat Intelligence   | https://polyswarm.io                                     | API                              |
 | FullHunt                  | Exposures/Attack Surface      | https://fullhunt.io                                      | API                              |
@@ -114,16 +113,16 @@ This folder contains ETL scripts and documentation for integrating, normalizing,
 | BinaryEdge                | Exposures                     | https://www.binaryedge.io                                | API                              |
 | GreyNoise                 | Scan/Noise Intel              | https://www.greynoise.io                                 | API                              |
 | LeakIX                    | Leaks/Exposed Data            | https://leakix.net                                       | API                              |
-| HIBP                      | Breach Lookup                 | https://haveibeenpwned.com                               | API, user has account            |
-| DeHashed                  | Breach Lookup                 | https://www.dehashed.com                                 | API, user has account            |
-| Snusbase                  | Breach Lookup                 | https://snusbase.com                                     | API, user has account            |
-| Bug Bounty Hunting        | Public Bug Bounty Findings    | https://www.bugbountyhunting.com                         | Public findings                   |
+| HIBP                      | Breach Lookup                 | https://haveibeenpwned.com                               | API                              |
+| DeHashed                  | Breach Lookup                 | https://www.dehashed.com                                 | API                              |
+| Snusbase                  | Breach Lookup                 | https://snusbase.com                                     | API                              |
+| Bug Bounty Hunting        | Public Bug Bounty Findings    | https://www.bugbountyhunting.com                         | Public findings                  |
 | Breach Detective          | Breach/Leak Intel             | https://breachdetective.com                              | Feed                             |
-| IntelligenceX             | Dark Web/Leak Search          | https://intelx.io                                       | API, user has paid account       |
-| CRT.sh                    | Cert Transparency Logs        | https://crt.sh                                          | Feed                             |
-| DNSDumpster               | DNS Recon/Exposure            | https://dnsdumpster.com                                 | Feed                             |
-| ZoomEye                   | Internet Scan/Exposure        | https://ZoomEye.ai                                      | API                              |
-| Shodan                    | Exposure/Telemetry            | https://www.shodan.io                                   | API                              |
+| IntelligenceX             | Dark Web/Leak Search          | https://intelx.io                                        | API                              |
+| CRT.sh                    | Cert Transparency Logs        | https://crt.sh                                           | Feed                             |
+| DNSDumpster               | DNS Recon/Exposure            | https://dnsdumpster.com                                  | Feed                             |
+| ZoomEye                   | Internet Scan/Exposure        | https://ZoomEye.ai                                       | API                              |
+| Shodan                    | Exposure/Telemetry            | https://www.shodan.io                                    | API                              |
 
 ---
 
@@ -138,11 +137,11 @@ To request a new feed integration, suggest a candidate, or contribute an ETL scr
 - **Emerging Threats ET Open** – Snort/Suricata IDS rules
 
 #### **Immediate Next Priorities:**
-1. Google Project Zero "0-day ITW"
-2. Shadowserver Exploited-CVE
-3. Metasploit Modules
-4. MISP Galaxies
-5. Shodan
+- ~~Google Project Zero "0-day ITW"~~ (Implemented)
+- ~~Shadowserver Exploited-CVE~~ (Implemented)
+- Metasploit Modules (Pending)
+- ~~MISP Galaxies~~ (Implemented)
+- Shodan (Pending)
 
 ---
 
