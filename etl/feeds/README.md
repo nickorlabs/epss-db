@@ -95,7 +95,7 @@ _Note: The above table reflects current priorities and in-progress work for new 
 | Malware Patrol            | Malware Feeds                 | https://www.malwarepatrol.net/                             | API                              |
 | Malware-Traffic-Analysis.net | Malware Traffic Samples     | https://malware-traffic-analysis.net/                     | Samples                          |
 | MalwareDomains.com        | Malicious Domains             | http://www.malwaredomains.com/                             | List                             |
-| MetaDefender Cloud        | Threat Intelligence Feed      | https://www.opswat.com/developers/threat-intelligence-feed | API                           |
+| MetaDefender Cloud        | Threat Intelligence Feed      | https://www.opswat.com/developers/threat-intelligence-feed | API                              |
 | Netlab OpenData Project   | Threat Data/C2                | https://blog.netlab.360.com/tag/english/                   | Feeds                            |
 | NoThink!                  | Malicious IPs                 | http://www.nothink.org                                     | Blocklists                       |
 | NormShield Services       | Threat Intelligence           | https://services.normshield.com                            | API                              |
@@ -103,26 +103,26 @@ _Note: The above table reflects current priorities and in-progress work for new 
 | Obstracts                 | Threat Intelligence           | https://www.obstracts.com/                                 | API                              |
 | Vulners                   | Vuln Aggregator               | https://vulners.com                                        | API                              |
 | Pulsedive                 | Threat Intelligence           | https://pulsedive.com                                      | API                              |
-| AlienVault OTX            | Threat Intelligence           | https://www.alienvault.com                               | API                              |
-| PolySwarm                 | Malware/Threat Intelligence   | https://polyswarm.io                                     | API                              |
-| FullHunt                  | Exposures/Attack Surface      | https://fullhunt.io                                      | API                              |
-| SecurityTrails            | DNS/Threat Data               | https://securitytrails.com                               | API                              |
-| ONYPHE                    | Threat Data                   | https://www.onyphe.io                                    | API                              |
-| Netlas                    | Internet Assets               | https://netlas.io                                        | API                              |
-| Censys                    | Internet Scan/Exposure        | https://censys.io                                        | API                              |
-| BinaryEdge                | Exposures                     | https://www.binaryedge.io                                | API                              |
-| GreyNoise                 | Scan/Noise Intel              | https://www.greynoise.io                                 | API                              |
-| LeakIX                    | Leaks/Exposed Data            | https://leakix.net                                       | API                              |
-| HIBP                      | Breach Lookup                 | https://haveibeenpwned.com                               | API                              |
-| DeHashed                  | Breach Lookup                 | https://www.dehashed.com                                 | API                              |
-| Snusbase                  | Breach Lookup                 | https://snusbase.com                                     | API                              |
-| Bug Bounty Hunting        | Public Bug Bounty Findings    | https://www.bugbountyhunting.com                         | Public findings                  |
-| Breach Detective          | Breach/Leak Intel             | https://breachdetective.com                              | Feed                             |
-| IntelligenceX             | Dark Web/Leak Search          | https://intelx.io                                        | API                              |
-| CRT.sh                    | Cert Transparency Logs        | https://crt.sh                                           | Feed                             |
-| DNSDumpster               | DNS Recon/Exposure            | https://dnsdumpster.com                                  | Feed                             |
-| ZoomEye                   | Internet Scan/Exposure        | https://ZoomEye.ai                                       | API                              |
-| Shodan                    | Exposure/Telemetry            | https://www.shodan.io                                    | API                              |
+| AlienVault OTX            | Threat Intelligence           | https://www.alienvault.com                                 | API                              |
+| PolySwarm                 | Malware/Threat Intelligence   | https://polyswarm.io                                       | API                              |
+| FullHunt                  | Exposures/Attack Surface      | https://fullhunt.io                                        | API                              |
+| SecurityTrails            | DNS/Threat Data               | https://securitytrails.com                                 | API                              |
+| ONYPHE                    | Threat Data                   | https://www.onyphe.io                                      | API                              |
+| Netlas                    | Internet Assets               | https://netlas.io                                          | API                              |
+| Censys                    | Internet Scan/Exposure        | https://censys.io                                          | API                              |
+| BinaryEdge                | Exposures                     | https://www.binaryedge.io                                  | API                              |
+| GreyNoise                 | Scan/Noise Intel              | https://www.greynoise.io                                   | API                              |
+| LeakIX                    | Leaks/Exposed Data            | https://leakix.net                                         | API                              |
+| HIBP                      | Breach Lookup                 | https://haveibeenpwned.com                                 | Not Implemented                  |
+| DeHashed                  | Breach Lookup                 | https://www.dehashed.com                                   | Not Implemented                  |
+| Snusbase                  | Breach Lookup                 | https://snusbase.com                                       | Not Implemented                  |
+| Bug Bounty Hunting        | Public Bug Bounty Findings    | https://www.bugbountyhunting.com                           | Public findings                  |
+| Breach Detective          | Breach/Leak Intel             | https://breachdetective.com                                | Feed                             |
+| IntelligenceX             | Dark Web/Leak Search          | https://intelx.io                                          | Not Implemented                  |
+| CRT.sh                    | Cert Transparency Logs        | https://crt.sh                                             | Feed                             |
+| DNSDumpster               | DNS Recon/Exposure            | https://dnsdumpster.com                                    | Feed                             |
+| ZoomEye                   | Internet Scan/Exposure        | https://ZoomEye.ai                                         | API                              |
+| Shodan                    | Exposure/Telemetry            | https://www.shodan.io                                      | API                              |
 
 ---
 
