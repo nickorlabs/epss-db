@@ -4,6 +4,39 @@
 
 The following table lists all ETL scripts present in this folder, the feed they correspond to, and their status:
 
+---
+
+## Next Feeds to Implement (Roadmap)
+
+The following feeds are prioritized for upcoming implementation to add real-world risk, exploit, and threat context:
+
+### A. Real-World Risk Signals
+- **Google Project Zero "0-day ITW"** – Track zero-days exploited in the wild (CSV, high value)
+- **Shadowserver Exploited-CVE Feed** – Shows which CVEs are being actively exploited in honeypots (CSV/JSON)
+- **EPSS Integration** – Already implemented in main ETL, will be migrated to feeds structure
+- **Shodan Search & Streaming** – Exposure and early-warning telemetry (API, streaming)
+
+### B. Additional Exploit Repositories
+- **Metasploit Modules** – Ready-to-run exploits from GitHub
+- **Packet Storm Security** – 25-year exploit archive
+- **Nuclei Templates** – HTTP/network scanner templates for vulnerability detection
+
+### C. Threat Actor Enrichment
+- **MISP Galaxies – Threat Actors** – Maps threat actors to CVEs they exploit
+
+### D. Detection Rules
+- **Sigma Rules** – Generic SIEM detection rules
+- **Emerging Threats ET Open** – Snort/Suricata IDS rules
+
+#### **Immediate Next Priorities:**
+1. Google Project Zero "0-day ITW"
+2. Shadowserver Exploited-CVE
+3. Metasploit Modules
+4. MISP Galaxies
+5. Shodan
+
+---
+
 | Script Name                       | Feed Source / Description                          | Status        |
 |-----------------------------------|---------------------------------------------------|---------------|
 | update_ghsa_graphql.py            | GitHub Security Advisories (GHSA, GraphQL)        | Implemented   |
@@ -17,12 +50,22 @@ The following table lists all ETL scripts present in this folder, the feed they 
 | list_vulncheck_indices.py         | VulnCheck indices utility                         | Implemented   |
 | update_gitlab_advisory_db.py      | GitLab Advisory Database                          | Implemented   |
 | update_osv.py                     | OSV                                               | Implemented   |
-| update_cpe_dictionary.py          | NVD CPE Dictionary                                | Implemented   |
+| update_cpe_dictionary.py          | NVD CPE Dictionary and CVE to CPE mapping         | Implemented   |
 | update_cwe.py                     | CWE                                               | Implemented   |
-| update_exploitdb.py                | Exploit-DB (exploitdb.com, CSV+repo)             | Implemented   |
-| update_cisa_vulnrichment.py        | CISA Vulnrichment (GitHub enrichment repo)       | Implemented   |
+| update_exploitdb.py               | Exploit-DB (exploitdb.com, CSV+repo)             | Implemented   |
+| update_cisa_vulnrichment.py       | CISA Vulnrichment (GitHub enrichment repo)       | Implemented   |
 | update_cnnvd.py                   | CNNVD                                             | Removed       |
 | update_vulncheck_nist_nvd1.py     | VulnCheck NVD 1.0                                 | Removed       |
+| update_google_project_zero_0day_itw.py | Google Project Zero "0-day ITW"              | Implemented   |
+| update_shadowserver_exploited_cve.py | Shadowserver Exploited-CVE (Playwright-scraped, all table data from dashboard, not limited to CVEs) | Implemented   |
+| update_misp_galaxies_threat_actors.py | MISP Galaxies - Threat Actors | Implemented       |
+| update_metasploit_modules.py | Metasploit Modules | Implemented       |
+| update_packet_storm_security.py | Packet Storm Security (RSS Only were poor y0 5k a month :( )) | Implemented       |
+| update_nuclei_templates.py | Nuclei Templates | Implemented       |
+| update_sigma_rules.py | Sigma Rules | Implemented       |
+| update_emerging_threats_et_open.py | Emerging Threats ET Open | Implemented       |
+| update_epss.py | EPSS | Implemented   |
+
 
 _All feeds listed below are zero‑cost; cite attribution where licences request it._
 ---
@@ -101,6 +144,22 @@ These sources provide proof-of-concept and weaponized exploit code for known vul
 | **Huawei IPS Vuln List** | IPS signatures ↔ CVE map | isecurity.huawei.com/sec/web/ipsVulnerability.do | Daily |
 | **JVN (Japan CERT)** | JP‑CERT advisories | jvn.jp/en/rss/ | Daily |
 | **Qubes Security Bulletins** | Qubes OS / Xen | qubes-os.org/security/qsb/ | Ad‑hoc |
+
+### Additional Vendor & Research Advisory Sources (Planned / Candidate)
+| Feed/Source               | Status             | Access/Notes                                  |
+|--------------------------|--------------------|-----------------------------------------------|
+| Vapid Labs               | Not implemented    | No structured feed; scraping needed           |
+| 0day.today               | Not implemented    | No structured feed; scraping needed           |
+| CERT/CC                  | Not implemented    | RSS available                                 |
+| Rapid7                   | Not implemented    | Web only; scraping possible                   |
+| Cisco Security Advisories| Not implemented    | RSS available                                 |
+| Microsoft MSRC           | Not implemented    | RSS available                                 |
+| Oracle Security Alerts   | Not implemented    | RSS available                                 |
+| IBM PSIRT                | Not implemented    | RSS available                                 |
+| Adobe Security Bulletins | Not implemented    | RSS available                                 |
+| ...                      | ...                | ...                                           |
+
+> These sources are candidates for future ETL expansion. If you would like to prioritize or contribute to any of these, please open an issue or pull request.
 
 ## 6  Context & Threat‑Actor Enrichment
 | Feed | Adds… | Access | Licence |

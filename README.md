@@ -31,10 +31,16 @@ ExploitPulse supports scheduled (e.g., daily or hourly via cron) or on-demand ET
 
 ## Supported & Planned Feeds
 
-The full, up-to-date list of all implemented and planned ETL feeds—including their status, source, and coverage—is maintained in [`etl/feeds/README.md`](etl/feeds/README.md). This file serves as the canonical reference for all vulnerability data sources (CVE, CPE, CWE, KEV, NVD, ExploitDB, Vulnrichment, etc.) supported by ExploitPulse.
+The full, up-to-date list of all implemented and planned ETL feeds—including their status, source, and coverage—is maintained in [`etl/feeds/README.md`](etl/feeds/README.md). This file is the canonical reference for all vulnerability and threat intelligence sources supported by ExploitPulse.
 
-- **To see the current feed coverage, implementation status, and roadmap,** refer to [`etl/feeds/README.md`](etl/feeds/README.md).
-- This file is regularly updated as new feeds are added or changes are made to the ETL pipeline.
+**Recent Updates:**
+- **Sigma Rules (`update_sigma_rules.py`)**: Fully implemented. Extracts all Sigma detection rules and metadata, not just CVE references. Outputs both a full rule dump and a normalized CVE mapping.
+- **MISP Galaxies – Threat Actors (`update_misp_galaxies_threat_actors.py`)**: Fully implemented. Extracts all threat actor objects and metadata, not just CVE mappings. Outputs both a full actor dump and a normalized actor→CVE mapping.
+- **Emerging Threats ET Open (`update_emerging_threats_et_open.py`)**: Fully implemented. Extracts all Snort/Suricata rules and metadata, not just those with CVEs. Outputs both a full rule dump and a normalized CVE/SID mapping.
+
+> **All ETL jobs now extract all available vulnerability and threat intelligence data—not just CVE-related information.**
+
+See [`etl/feeds/README.md`](etl/feeds/README.md) for the canonical feed list, implementation status, and details on all supported and planned sources.
 
 ---
 
