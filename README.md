@@ -33,6 +33,11 @@ ExploitPulse supports scheduled (e.g., daily or hourly via cron) or on-demand ET
 
 The full, up-to-date list of all implemented and planned ETL feeds—including their status, source, and coverage—is maintained in [`etl/feeds/README.md`](etl/feeds/README.md). This file is the canonical reference for all vulnerability and threat intelligence sources supported by ExploitPulse.
 
+Jump directly to:
+- [Implemented Feeds](etl/feeds/README.md#implemented-feeds)
+- [Candidate Feeds (Planned / Not Implemented)](etl/feeds/README.md#candidate-feeds-planned--not-implemented)
+- [How to Contribute or Prioritize](etl/feeds/README.md#how-to-contribute-or-prioritize)
+
 **Recent Updates:**
 - **Sigma Rules (`update_sigma_rules.py`)**: Fully implemented. Extracts all Sigma detection rules and metadata, not just CVE references. Outputs both a full rule dump and a normalized CVE mapping.
 - **MISP Galaxies – Threat Actors (`update_misp_galaxies_threat_actors.py`)**: Fully implemented. Extracts all threat actor objects and metadata, not just CVE mappings. Outputs both a full actor dump and a normalized actor→CVE mapping.
