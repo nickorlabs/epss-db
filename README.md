@@ -64,7 +64,7 @@ See [`etl/feeds/README.md`](etl/feeds/README.md) for the canonical feed list, im
 - Features include parallel processing, batch upserts, robust retry logic, and detailed logging.
 - Each ETL job should be run individually for best results and troubleshooting.
 - Legacy shell scripts and MySQL support are archived and no longer maintained.
-
+- **Note:** The `update_all.py` script has been removed. Please run each ETL script individually for best results and troubleshooting.
 ---
 
 ## Project Structure
@@ -82,8 +82,7 @@ See [`etl/feeds/README.md`](etl/feeds/README.md) for the canonical feed list, im
 │   ├── update_kev.py          # Python ETL: CISA KEV
 │   ├── update_cpe.py          # Python ETL: CPE (NVD CPE Dictionary)
 │   ├── update_vulnrich.py     # Python ETL: Vulnrichment
-│   ├── update_exploitdb.py    # Python ETL: ExploitDB (exploits, tags, metadata)
-│   └── update_all.py          # Run all ETL jobs in sequence
+│   └── update_exploitdb.py    # Python ETL: ExploitDB (exploits, tags, metadata)
 ├── etl/epss-data/         # EPSS data storage (auto-downloaded)
 ├── etl/vulnrichment/      # Vulnrichment repo (auto-cloned)
 ├── etl/exploitdb-data/    # ExploitDB CSV/temp storage (auto-downloaded, auto-removed after ETL)
