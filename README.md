@@ -70,25 +70,197 @@ See [`etl/feeds/README.md`](etl/feeds/README.md) for the canonical feed list, im
 ## Project Structure
 
 ```
-/opt/ExploitPulse/
-├── README.md, LICENSE, PULL_REQUEST.md
-├── etl/
-│   ├── feeds/
-│   │   └── README.md   # Canonical list of all implemented and planned feeds, with status and details
-│   ├── Dockerfile.importer
+.
+├── archive
+│   └── etl
+│       ├── archive
+│       ├── backfill_cve_references.py
+│       ├── cve_utils.py
+│       ├── db
+│       ├── docker-compose.yml
+│       ├── Dockerfile.db
+│       ├── Dockerfile.importer
+│       ├── epss-data.code-workspace
+│       ├── etl_cpe_dictionary.py
+│       ├── etl_utils.py
+│       ├── feeds
+│       ├── logs
+│       ├── migrate_to_normalized_schema.py
+│       ├── README.md
+│       ├── requirements.txt
+│       ├── secrets
+│       ├── test_verify_mitre_cvss.py
+│       ├── truncate_all_etl_tables.sql
+│       ├── update_all.py
+│       ├── update_cpe.py
+│       ├── update_epss.log
+│       ├── update_epss.py
+│       ├── update_exploitdb.py
+│       ├── update_kev.py
+│       ├── update_mitre.py
+│       ├── update_vulnrich.py
+│       └── utils
+├── certfr_fr_to_en.jpg
+├── cleanup.sh
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── create_issues.sh
+├── docker
 │   ├── docker-compose.yml
-│   ├── requirements.txt
-│   ├── update_epss.py         # Python ETL: EPSS
-│   ├── update_kev.py          # Python ETL: CISA KEV
-│   ├── update_cpe.py          # Python ETL: CPE (NVD CPE Dictionary)
-│   ├── update_vulnrich.py     # Python ETL: Vulnrichment
-│   └── update_exploitdb.py    # Python ETL: ExploitDB (exploits, tags, metadata)
-├── etl/epss-data/         # EPSS data storage (auto-downloaded)
-├── etl/vulnrichment/      # Vulnrichment repo (auto-cloned)
-├── etl/exploitdb-data/    # ExploitDB CSV/temp storage (auto-downloaded, auto-removed after ETL)
-├── archive/               # Legacy scripts, configs, and old data
-├── docker/, docs/, tests/
-└── ...
+│   ├── Dockerfile
+│   ├── env
+│   ├── etl
+│   │   └── secrets
+│   ├── init.sql
+│   └── README.md
+├── etl
+│   ├── common
+│   │   ├── api.py
+│   │   ├── git_utils.py
+│   │   ├── __init__.py
+│   │   ├── io.py
+│   │   ├── io_utils.py
+│   │   ├── logging.py
+│   │   ├── osv_normalizer.py
+│   │   ├── secrets.py
+│   │   ├── translation.py
+│   │   └── verify.py
+│   ├── feeds
+│   │   ├── GITHUB_ETL_TEMPLATE.md
+│   │   ├── __init__.py
+│   │   ├── list_vulncheck_indices.py
+│   │   ├── README.md
+│   │   ├── requirements.txt
+│   │   ├── update_acsc_advisories.py
+│   │   ├── update_certcc.py
+│   │   ├── update_cert_eu_guidance.py
+│   │   ├── update_cert_eu_sec_advisories.py
+│   │   ├── update_cert_eu_threat_intel.py
+│   │   ├── update_certfr_actualite.py
+│   │   ├── update_certfr_alerte.py
+│   │   ├── update_certfr_avis.py
+│   │   ├── update_certfr_cti.py
+│   │   ├── update_certfr_dur.py
+│   │   ├── update_certfr_ioc.py
+│   │   ├── update_cisa_known_exploited.py
+│   │   ├── update_cisa_vulnrichment.py
+│   │   ├── update_cisco_advisories.py
+│   │   ├── update_cpe_dictionary.py
+│   │   ├── update_cwe.py
+│   │   ├── update_cyber_threat_alliance.py
+│   │   ├── update_emerging_threats_et_open.py
+│   │   ├── update_epss.py
+│   │   ├── update_exploitdb.py
+│   │   ├── update_github_security_advisories.py
+│   │   ├── update_gitlab_advisory_db.py
+│   │   ├── update_google_project_zero_0day_itw.py
+│   │   ├── update_govcertnl.py
+│   │   ├── update_metasploit_modules.py
+│   │   ├── update_misp_galaxies_threat_actors.py
+│   │   ├── update_mitre_cve.py
+│   │   ├── update_msrc.py
+│   │   ├── update_nuclei_templates.py
+│   │   ├── update_nvd_v2.py
+│   │   ├── update_open_cvdb.py
+│   │   ├── update_osv.py
+│   │   ├── update_packet_storm_security.py
+│   │   ├── update_shadowserver_exploited_cve.py
+│   │   ├── update_shadowserver_exploitedcve.py
+│   │   ├── update_sigma_rules.py
+│   │   ├── update_spamhaus.py
+│   │   ├── update_us_cert.py
+│   │   ├── update_vulncheck_kev.py
+│   │   ├── update_vulncheck_mitre.py
+│   │   └── update_vulncheck_nist_nvd2.py
+│   ├── __init__.py
+│   ├── secrets
+│   │   ├── cert_cc_api_key
+│   │   ├── github_api_token
+│   │   ├── nvd_api_key
+│   │   ├── packetstorm_auth
+│   │   ├── packet_storm_dev_api_user_pass
+│   │   ├── pg_password
+│   │   ├── pg_user
+│   │   └── vulncheck_api_key
+│   └── tests
+│       └── __init__.py
+├── etl-data
+│   ├── cache
+│   │   ├── cert_eu
+│   │   ├── cert_eu_guidance
+│   │   ├── cert_eu_threat_intel
+│   │   ├── certfr
+│   │   ├── cisa_vulnrichment_repo
+│   │   ├── exploitdb_repo
+│   │   ├── gitlab_advisory_db
+│   │   ├── metasploit-framework
+│   │   ├── mitre
+│   │   ├── nuclei-templates
+│   │   ├── open-cvdb
+│   │   ├── sigma
+│   │   └── Vulnerability-Data-Archive
+│   ├── mitre
+│   │   └── cvelistV5
+│   ├── normalized
+│   │   ├── acsc_advisories
+│   │   ├── certcc
+│   │   ├── cert_eu_advisories
+│   │   ├── cert_eu_guidance
+│   │   ├── cert_eu_threat_intel
+│   │   ├── certfr
+│   │   ├── cisa_known_exploited
+│   │   ├── cisa_vulnrichment
+│   │   ├── cisa_vulnrichment_normalized_20250530201317.json
+│   │   ├── cisa_vulnrichment_normalized_20250530223139.json
+│   │   ├── cisco_advisories
+│   │   ├── cwe
+│   │   ├── cybersecurity_advisories
+│   │   ├── cyber_threat_alliance
+│   │   ├── exploitdb
+│   │   ├── gitlab_advisory_db
+│   │   ├── metasploit
+│   │   ├── mitre_cve
+│   │   ├── nuclei_templates
+│   │   ├── open_cvdb_norm_20250530T231902Z.json
+│   │   └── sigma
+│   ├── raw
+│   │   ├── acsc_advisories
+│   │   ├── certcc
+│   │   ├── cert_eu_advisories
+│   │   ├── cert_eu_guidance
+│   │   ├── cert_eu_threat_intel
+│   │   ├── certfr
+│   │   ├── cisa_known_exploited
+│   │   ├── cisa_vulnrichment
+│   │   ├── cisa_vulnrichment_full.json
+│   │   ├── cisa_vulnrichment_repo
+│   │   ├── cisco_advisories
+│   │   ├── cybersecurity_advisories
+│   │   ├── cyber_threat_alliance
+│   │   ├── exploitdb
+│   │   ├── gitlab_advisory_db
+│   │   ├── metasploit
+│   │   ├── mitre_cve
+│   │   ├── mitre_cvelist_raw_dump.json
+│   │   ├── nuclei_templates
+│   │   ├── open_cvdb
+│   │   └── sigma
+│   ├── sigma_loader_debug.txt
+│   ├── sigma_norm_error.json
+│   └── Vulnerability-Data-Archive
+│       ├── data
+│       ├── LICENSE.md
+│       └── README.md
+├── LICENSE
+├── logo.png
+├── PULL_REQUEST.md
+├── README.md
+├── ROADMAP.md
+├── ROADMAP_USER_STORIES.md
+├── SECURITY.md
+└── user_stories_issues.txt
+
+76 directories, 112 files
 ```
 
 For the latest feed coverage and implementation status, see [`etl/feeds/README.md`](etl/feeds/README.md).
