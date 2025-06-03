@@ -8,10 +8,15 @@ This folder contains ETL scripts and documentation for integrating, normalizing,
 ## Implemented Feeds
 | Feed Name                | Type/Focus                    | Access/URL                                             | Cadence           | Licence/Notes                |
 |-------------------------|-------------------------------|--------------------------------------------------------|-------------------|------------------------------|
+| CERT-FR Actualité             | CERT-FR Security News                    | https://www.cert.ssi.gouv.fr/actualite/  | As published | Government Data |
+| CERT-FR Alerte                | CERT-FR Security Alerts                  | https://www.cert.ssi.gouv.fr/alerte/     | As published | Government Data |
+| CERT-FR Avis                  | CERT-FR Security Advisories              | https://www.cert.ssi.gouv.fr/avis/       | As published | Government Data |
+| CERT-FR CTI                   | CERT-FR Cyber Threat Intelligence        | https://www.cert.ssi.gouv.fr/cti/        | As published | Government Data |
+| CERT-FR IOC                   | CERT-FR Indicators of Compromise         | https://www.cert.ssi.gouv.fr/ioc/        | As published | Government Data |
 | CISA Vulnrichment (SSVC) | SSVC decision points + CWE / CVSS enrichments for new CVEs | https://github.com/cisagov/vulnrichment                | Continuous commits | CC0 (public domain)           |
 | EPSS                     | Exploit Prediction Scoring    | https://www.first.org/epss                             | Daily             | CC BY-SA 4.0                  |
-| ExploitDB                | Exploit Archive               | https://www.exploit-db.com                             | Daily             | GPL-2                        |
 | Emerging Threats ET Open | IDS/IPS Rules (Snort/Suricata)| https://rules.emergingthreats.net/open/                | Daily             | GPL-2                        |
+| ExploitDB                | Exploit Archive               | https://www.exploit-db.com                             | Daily             | GPL-2                        |
 | Google Project Zero 0-day ITW | 0-day Exploits in the Wild | https://googleprojectzero.blogspot.com/                | As published      | CC BY 4.0                    |
 | MISP Galaxies Threat Actors | Threat Actor ↔ CVE Map    | https://github.com/MISP/misp-galaxy                    | Continuous Git    | CC0 / MIT                    |
 | MITRE CVE List           | Canonical CVE assignments     | https://github.com/CVEProject/cvelistV5                | ~7 min pushes     | Public domain                 |
@@ -178,27 +183,32 @@ Refer to [GITHUB_ETL_TEMPLATE.md](./GITHUB_ETL_TEMPLATE.md) for the full templat
 
 | Script Name                       | Feed Source / Description                          | Status        |
 |-----------------------------------|---------------------------------------------------|---------------|
+| list_vulncheck_indices.py         | VulnCheck indices utility                         | Implemented   |
+| update_certfr_actualite.py        | CERT-FR Actualité (News)                          | Implemented   |
+| update_certfr_alerte.py           | CERT-FR Alerte (Alerts)                           | Implemented   |
+| update_certfr_avis.py             | CERT-FR Avis (Advisories)                         | Implemented   |
+| update_certfr_cti.py              | CERT-FR CTI (Cyber Threat Intelligence)           | Implemented   |
+| update_certfr_ioc.py              | CERT-FR IOC (Indicators of Compromise)            | Implemented   |
+| update_cisa_known_exploited.py    | CISA Known Exploited Vulnerabilities (KEV)        | Implemented   |
+| update_cisa_vulnrichment.py       | CISA Vulnrichment (GitHub enrichment repo)        | Implemented   |
+| update_cnnvd.py                   | CNNVD                                             | Removed       |
+| update_cpe_dictionary.py          | NVD CPE Dictionary and CVE to CPE mapping         | Implemented   |
+| update_cwe.py                     | CWE                                               | Implemented   |
+| update_exploitdb.py               | Exploit-DB (exploitdb.com, CSV+repo)              | Implemented   |
 | update_ghsa_graphql.py            | GitHub Security Advisories (GHSA, GraphQL)        | Implemented   |
-| update_cisa_known_exploited.py                     | CISA Known Exploited Vulnerabilities (KEV)        | Implemented   |
+| update_gitlab_advisory_db.py      | GitLab Advisory Database                          | Implemented   |
+| update_google_project_zero_0day_itw.py | Google Project Zero "0-day ITW"               | Implemented   |
+| update_metasploit_modules.py      | Metasploit Modules                                | Implemented   |
+| update_misp_galaxies_threat_actors.py | MISP Galaxies - Threat Actors                   | Implemented   |
 | update_mitre.py                   | MITRE CVE List V5                                 | Implemented   |
 | update_nvd_v2.py                  | NIST NVD 2.0                                      | Implemented   |
 | update_opencvdb.py                | CloudVulnDB / open-cvdb                           | Implemented   |
+| update_osv.py                     | OSV                                               | Implemented   |
+| update_shadowserver_exploited_cve.py | Shadowserver Exploited-CVE (Playwright-scraped, all table data from dashboard, not limited to CVEs) | Implemented   |
 | update_vulncheck_kev.py           | VulnCheck KEV                                     | Implemented   |
 | update_vulncheck_mitre.py         | VulnCheck MITRE CVE V5                            | Implemented   |
-| update_vulncheck_nist_nvd2.py     | VulnCheck NVD 2.0                                 | Implemented   |
-| list_vulncheck_indices.py         | VulnCheck indices utility                         | Implemented   |
-| update_gitlab_advisory_db.py      | GitLab Advisory Database                          | Implemented   |
-| update_osv.py                     | OSV                                               | Implemented   |
-| update_cpe_dictionary.py          | NVD CPE Dictionary and CVE to CPE mapping         | Implemented   |
-| update_cwe.py                     | CWE                                               | Implemented   |
-| update_exploitdb.py               | Exploit-DB (exploitdb.com, CSV+repo)             | Implemented   |
-| update_cisa_vulnrichment.py       | CISA Vulnrichment (GitHub enrichment repo)       | Implemented   |
-| update_cnnvd.py                   | CNNVD                                             | Removed       |
 | update_vulncheck_nist_nvd1.py     | VulnCheck NVD 1.0                                 | Removed       |
-| update_google_project_zero_0day_itw.py | Google Project Zero "0-day ITW"              | Implemented   |
-| update_shadowserver_exploited_cve.py | Shadowserver Exploited-CVE (Playwright-scraped, all table data from dashboard, not limited to CVEs) | Implemented   |
-| update_misp_galaxies_threat_actors.py | MISP Galaxies - Threat Actors | Implemented       |
-| update_metasploit_modules.py | Metasploit Modules | Implemented       |
+| update_vulncheck_nist_nvd2.py     | VulnCheck NVD 2.0                                 | Implemented   |
 | update_packet_storm_security.py | Packet Storm Security (RSS Only were poor y0 5k a month :( )) | Implemented       |
 | update_nuclei_templates.py | Nuclei Templates | Implemented       |
 | update_sigma_rules.py | Sigma Rules | Implemented       |

@@ -264,6 +264,23 @@ Use `psql` or any SQL client to explore tables:
 
 ---
 
+## Database Backend
+
+ExploitPulse currently utilizes **PostgreSQL** as its primary database backend. PostgreSQL offers robust relational data storage, transactional integrity, and a mature ecosystem, making it well-suited for structured vulnerability data and complex relationships between CVEs, CPEs, exploits, and other intelligence.
+
+Consideration is also being given to integrating **Elasticsearch** to complement PostgreSQL. Elasticsearch would provide powerful full-text search capabilities, advanced analytics, and flexible data exploration, which can be highly beneficial for threat intelligence correlation, dashboarding, and ad-hoc querying of large, denormalized datasets.
+
+**Key factors in this ongoing discussion include:**
+- **Use Cases**: Aligning database strengths with specific query patterns (e.g., relational joins vs. broad text search).
+- **Data Model**: Optimizing data structures for each backend (normalized for PostgreSQL, potentially denormalized for Elasticsearch).
+- **Performance**: Evaluating query speed and indexing overhead for different types of workloads.
+- **Operational Complexity**: Considering the management, scaling, and synchronization of potentially two database systems.
+- **Resource Requirements**: Assessing the infrastructure needs for each option.
+
+The project aims to make an informed decision to best support both structured data management and advanced analytical capabilities for vulnerability intelligence. Future development may involve a hybrid approach or a phased migration if benefits are clear.
+
+---
+
 ## Next Steps
 - Extend inline validation to all other feeds (ExploitDB, OSV, Snyk, etc.)
 - UI frontend for data exploration (coming soon)
