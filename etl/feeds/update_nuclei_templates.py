@@ -2,9 +2,8 @@
 Nuclei Templates ETL
 Downloads and parses the public Nuclei templates repo for CVE references.
 """
-
+SOURCE_TYPE = "github"
 import os
-import sys
 import logging
 import shutil
 import subprocess
@@ -12,9 +11,10 @@ import json
 import datetime
 from pathlib import Path
 import yaml
+from common.io_utils import safe_write_json
 
-RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "/etl-data/raw")
-NORM_DATA_DIR = os.environ.get("NORM_DATA_DIR", "/etl-data/normalized")
+RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "/etl-data/raw/nuclei_templates")
+NORM_DATA_DIR = os.environ.get("NORM_DATA_DIR", "/etl-data/normalized/nuclei_templates")
 REPO_URL = "https://github.com/projectdiscovery/nuclei-templates.git"
 REPO_CACHE = "/etl-data/cache/nuclei-templates"
 TEMPLATES_DIR = os.path.join(REPO_CACHE)
@@ -90,23 +90,32 @@ def parse_template_file(file_path):
     return meta
 
 def build_osv_object(meta, commit, snapshot_date):
-    osv_id = f"NUCLEI-{meta['template_id'] or Path(meta['path']).stem}"
+    # Always use the Nuclei template's own unique id as the OSV id (with NUCLEI- prefix)
+    template_id = meta['template_id'] or Path(meta['path']).stem
+    osv_id = f"NUCLEI-{template_id}"
+    aliases = []
+    cves = meta.get("cves", [])
+    if cves:
+        aliases.extend(cves)
+    # Prepare database_specific with all fields not mapped to OSV
+    std_fields = {"template_id", "name", "description", "tags", "severity", "cves", "references", "authors", "path"}
+    database_specific = {k: v for k, v in meta.items() if k not in std_fields}
+    database_specific["tags"] = meta.get("tags", [])
+    database_specific["severity"] = meta.get("severity")
+    database_specific["authors"] = meta.get("authors", [])
+    database_specific["path"] = meta.get("path")
+    database_specific["commit"] = commit
+    database_specific["date_extracted"] = snapshot_date
+    database_specific["source_type"] = SOURCE_TYPE
     osv_obj = {
         "id": osv_id,
         "modified": snapshot_date,
-        "summary": meta.get("name") or meta.get("template_id"),
+        "summary": meta.get("name") or template_id,
         "details": meta.get("description") or "",
-        "aliases": meta.get("cves", []),
-        "references": [{"type": "REFERENCE", "url": ref} for ref in meta.get("references", [])],
+        "aliases": aliases,
+        "references": [{"type": "ARTICLE", "url": ref} for ref in meta.get("references", [])],
         "affected": [],
-        "database_specific": {
-            "tags": meta.get("tags", []),
-            "severity": meta.get("severity"),
-            "authors": meta.get("authors", []),
-            "path": meta.get("path"),
-            "commit": commit,
-            "date_extracted": snapshot_date
-        }
+        "database_specific": database_specific
     }
     return osv_obj
 
@@ -118,20 +127,34 @@ def fetch_nuclei_templates():
     commit = get_repo_commit()
     archive_raw_templates(snapshot_date)
 
+    parsed_templates = []
     osv_objs = []
     for root, dirs, files in os.walk(TEMPLATES_DIR):
         for fname in files:
             if fname.endswith(".yaml") or fname.endswith(".yml"):
                 fpath = Path(root) / fname
                 meta = parse_template_file(fpath)
+                parsed_templates.append(meta)
                 osv_obj = build_osv_object(meta, commit, snapshot_date)
                 osv_objs.append(osv_obj)
 
-    out_json = os.path.join(norm_out_dir, "templates.json")
-    with open(out_json, "w", encoding="utf-8") as f:
-        json.dump(osv_objs, f, indent=2)
-    logging.info(f"Wrote {len(osv_objs)} templates to {out_json}")
-    return out_json
+    # Save raw parsed templates as JSON
+    raw_output_path = os.path.join(RAW_DATA_DIR, f"nuclei_raw_{snapshot_date}.json")
+    safe_write_json(raw_output_path, parsed_templates, indent=2)
+    logging.info(f"Wrote {len(parsed_templates)} raw Nuclei templates to {raw_output_path}")
+
+    norm_output_path = os.path.join(NORM_DATA_DIR, f"nuclei_norm_{snapshot_date}.json")
+    safe_write_json(norm_output_path, osv_objs, indent=2)
+    logging.info(f"Wrote {len(osv_objs)} normalized Nuclei templates to {norm_output_path}")
+
+    # Verification step
+    from common import verify
+    try:
+        verify.verify_record_count(parsed_templates, osv_objs)
+        verify.verify_ids(parsed_templates, osv_objs, raw_id_key='template_id', norm_id_key='id')
+    except Exception as e:
+        logging.warning(f"Verification failed: {e}")
+    return norm_output_path
 
 if __name__ == "__main__":
     fetch_nuclei_templates()

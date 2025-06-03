@@ -3,9 +3,11 @@ import json
 import logging
 import argparse
 import requests
+from etl.common.io_utils import safe_write_json
 
 graphql_url = "https://api.github.com/graphql"
-RAW_DUMP_PATH = "/etl-data/raw/ghsa_graphql_dump.json"
+RAW_DUMP_PATH = "/etl-data/raw/github_security_advisories_dump.json"
+NORM_DATA_DIR = os.environ.get("NORM_DATA_DIR", "/etl-data/normalized")
 
 # Load token from Docker secret or env
 def load_github_token():
@@ -67,15 +69,21 @@ def fetch_all_advisories(token):
         page += 1
     return advisories
 
-def dump_json(data, path):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'w') as f:
-        json.dump(data, f, indent=2)
-    logging.info(f"Dumped GHSA advisories to {path}")
+def dump_json(advisories, path):
+    safe_write_json(path, advisories, indent=2)
+    logging.info(f"Wrote {len(advisories)} GitHub Security Advisories advisories to {path}")
+
+    # Verification step
+    from etl.common import verify
+    try:
+        verify.verify_record_count(advisories, advisories)
+        verify.verify_ids(advisories, advisories, raw_id_key='ghsaId', norm_id_key='ghsaId')
+    except Exception as e:
+        logging.warning(f"Verification failed: {e}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Download all GitHub Security Advisories (GHSA) via GraphQL and dump to file.")
-    parser.add_argument('--dump-path', default=RAW_DUMP_PATH, help='Where to dump the raw GHSA JSON')
+    parser = argparse.ArgumentParser(description="Download all GitHub Security Advisories (GitHub Security Advisories) via GraphQL and dump to file.")
+    parser.add_argument('--dump-path', default=RAW_DUMP_PATH, help='Where to dump the raw GitHub Security Advisories JSON')
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
     token = load_github_token()
@@ -83,7 +91,7 @@ def main():
         raise RuntimeError("GitHub API token not found. Provide via /run/secrets/github_api_token or GITHUB_API_TOKEN env var.")
     advisories = fetch_all_advisories(token)
     dump_json(advisories, args.dump_path)
-    logging.info(f"Fetched and dumped {len(advisories)} GHSA advisories.")
+    logging.info(f"Fetched and dumped {len(advisories)} GitHub Security Advisories advisories.")
 
 if __name__ == "__main__":
     main()

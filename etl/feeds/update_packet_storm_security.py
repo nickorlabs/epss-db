@@ -15,13 +15,13 @@ import time
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
 
-RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "/etl-data/raw")
-NORM_DATA_DIR = os.environ.get("NORM_DATA_DIR", "/etl-data/normalized")
+RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "/common-data/raw")
+NORM_DATA_DIR = os.environ.get("NORM_DATA_DIR", "/common-data/normalized")
 MANIFEST_PATH = os.path.join(NORM_DATA_DIR, "packetstorm", "manifest.json")
 DEFAULT_DEV_API_URL = "https://api.packetstormsecurity.com/v31337.20240702/dev-api"
 DEFAULT_PROD_API_URL = "https://api.packetstormsecurity.com/v31337.20240702/api"
 API_URL = os.environ.get("PACKETSTORM_API_URL", DEFAULT_DEV_API_URL)
-API_KEY_PATH = os.environ.get("PACKETSTORM_API_KEY_FILE", "/etl/secrets/packetstorm_auth")
+API_KEY_PATH = os.environ.get("PACKETSTORM_API_KEY_FILE", "/common/secrets/packetstorm_auth")
 API_KEY_ENV = "PACKETSTORM_API_KEY"
 
 SUPPORTED_SECTIONS = ["advisory", "exploit"]  # can add more if needed
@@ -420,7 +420,7 @@ if __name__ == "__main__":
         r = requests.post(api_url, headers=headers, data=args.api_query)
         content_type = r.headers.get('Content-Type', '')
         print(f"[API-QUERY] Status: {r.status_code}, Content-Type: {content_type}")
-        out_path = f"/etl-data/raw/packetstorm_apiquery_{int(time.time())}.out"
+        out_path = f"/common-data/raw/packetstorm_apiquery_{int(time.time())}.out"
         if 'json' in content_type:
             try:
                 import json

@@ -8,7 +8,7 @@ import requests
 import json
 import logging
 
-RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "/etl-data/raw")
+RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "/common-data/raw")
 OUTPUT_JSON = os.path.join(RAW_DATA_DIR, "misp_galaxies_threat_actors.json")
 FULL_OUTPUT_JSON = os.path.join(RAW_DATA_DIR, "misp_galaxies_threat_actors_full.json")
 MISP_GALAXY_URL = "https://raw.githubusercontent.com/MISP/misp-galaxy/main/clusters/threat-actor.json"

@@ -2,7 +2,7 @@
 """
 Fetches and archives daily EPSS CSV snapshots from FIRST.org, supporting both incremental (single day) and full historical backfill modes.
 
-- Stores as /etl-data/raw/epss/v{version}/epss_scores-YYYY-MM-DD.csv
+- Stores as /common-data/raw/epss/v{version}/epss_scores-YYYY-MM-DD.csv
 - Version is determined by date based on official release history
 """
 import os
@@ -24,7 +24,7 @@ EPSS_VERSION_DATES = [
 
 EPSS_FIRST_DATE = date(2021, 4, 14)
 EPSS_BASE_URL = "https://epss.empiricalsecurity.com/"
-RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "/etl-data/raw")
+RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "/common-data/raw")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 

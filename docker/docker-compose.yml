@@ -23,17 +23,28 @@ services:
     volumes:
       - /opt/exploitpulse/etl/secrets:/run/secrets:ro
       - /opt/exploitpulse/etl-data:/etl-data
+      - /opt/exploitpulse/etl/secrets/packetstorm_auth:/etl/secrets/packetstorm_auth:ro
+      - /opt/exploitpulse/etl/secrets/cert_cc_api_key:/opt/exploitpulse/etl/secrets/cert_cc_api_key:ro
     working_dir: /scripts
     depends_on:
       - db
     environment:
       PGHOST: db
       PGDATABASE: exploitpulse
+      PYTHONPATH: /scripts/etl
     command: ["/wait-for-it.sh", "db:5432", "--"]
 
   # Add additional VulnCheck importers as needed
   # vulncheck_exploited_importer:
   #   ...
+
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - LT_LOAD_ONLY=en,fr,de,es,it,ru,zh
 
 volumes:
   pgdata:

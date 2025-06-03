@@ -129,6 +129,37 @@ _Note: The above table reflects current priorities and in-progress work for new 
 ## How to Contribute or Prioritize
 To request a new feed integration, suggest a candidate, or contribute an ETL script, please open an issue or pull request. If you wish to prioritize a feed, comment with your use case or operational requirement.
 
+## GitHub ETL Refactoring Plan & Checklist
+
+The following ETL scripts ingest data from GitHub or GitLab repositories and should be refactored to follow the standardized [GitHub ETL Template](./GITHUB_ETL_TEMPLATE.md). This ensures consistency, maintainability, and robust data processing.
+
+### **Refactoring Order and Checklist**
+
+#### **Prioritized Refactoring Order:**
+1. `update_opencvdb.py` — [wiz-sec/open-cvdb](https://github.com/wiz-sec/open-cvdb)
+2. `update_sigma_rules.py` — [SigmaHQ/sigma](https://github.com/SigmaHQ/sigma)
+3. `update_nuclei_templates.py` — [projectdiscovery/nuclei-templates](https://github.com/projectdiscovery/nuclei-templates)
+4. `update_metasploit_modules.py` — [rapid7/metasploit-framework](https://github.com/rapid7/metasploit-framework)
+5. `update_exploitdb.py` — [exploit-database/exploitdb](https://gitlab.com/exploit-database/exploitdb)
+6. `update_gitlab_advisory_db.py` — [gitlab-org/security-products/gemnasium-db](https://gitlab.com/gitlab-org/security-products/gemnasium-db)
+7. `update_mitre.py` — [CVEProject/cvelistV5](https://github.com/CVEProject/cvelistV5)
+8. `update_cisa_vulnrichment.py` — [cisagov/vulnrichment](https://github.com/cisagov/vulnrichment)
+9. `update_ghsa_graphql.py` — (GitHub Security Advisories via API)
+
+#### **Refactoring Steps for Each Script:**
+- [ ] Use `ensure_git_repo_latest` from `etl.common.git_utils` for all repo operations (clone, pull, update)
+- [ ] Use `create_osv_record` from `etl.common.osv_normalizer` for normalization
+- [ ] Save both raw and normalized data with timestamps in appropriate directories
+- [ ] Use environment variables for all configuration (paths, URLs, tokens)
+- [ ] Provide structured logging for each major operation
+- [ ] Ensure a clear `main()` entrypoint
+- [ ] Add or update module docstrings and inline comments
+- [ ] Remove legacy/custom git logic and redundant code
+
+Refer to [GITHUB_ETL_TEMPLATE.md](./GITHUB_ETL_TEMPLATE.md) for the full template and code skeleton.
+
+---
+
 ## References
 - [Awesome Threat Intelligence (GitHub)](https://github.com/hslatman/awesome-threat-intelligence)
 - [CyberSources (GitHub)](https://github.com/bst04/cybersources)

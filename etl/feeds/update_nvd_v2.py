@@ -3,7 +3,7 @@ import requests
 import logging
 import argparse
 import time
-from etl.common.secrets import load_api_key
+from common.common.secrets import load_api_key
 
 # Set up logging
 ENV = os.environ.get('ENV', 'development').lower()

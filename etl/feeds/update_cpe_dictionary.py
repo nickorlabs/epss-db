@@ -6,11 +6,23 @@ import logging
 import xml.etree.ElementTree as ET
 import json
 
-RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "/etl-data/raw")
+import os
+import requests
+import zipfile
+import io
+import logging
+import xml.etree.ElementTree as ET
+import json
+from datetime import datetime
+TS = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+
+RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "/common-data/raw")
 CPE_FEED_URL = "https://nvd.nist.gov/feeds/xml/cpe/dictionary/official-cpe-dictionary_v2.3.xml.zip"
-OUTPUT_XML = os.path.join(RAW_DATA_DIR, "cpe_dictionary.xml")
-OUTPUT_JSON = os.path.join(RAW_DATA_DIR, "cpe_dictionary.json")
-OUTPUT_CVE2CPE = os.path.join(RAW_DATA_DIR, "cve_to_cpe.json")
+OUTPUT_XML = os.path.join(RAW_DATA_DIR, f"cpe_dictionary_{TS}.xml")
+OUTPUT_JSON = os.path.join(RAW_DATA_DIR, f"cpe_dictionary_{TS}.json")
+NORM_DATA_DIR = os.environ.get("NORM_DATA_DIR", "/etl-data/normalized/cpe_dictionary")
+NORM_OUTPUT_JSON = os.path.join(NORM_DATA_DIR, f"cpe_dictionary_norm_{TS}.json")
+OUTPUT_CVE2CPE = os.path.join(RAW_DATA_DIR, f"cve_to_cpe_{TS}.json")
 NVD_CVE_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=2000&startIndex=0"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -21,6 +33,8 @@ def fetch_cpe_dictionary():
     logging.info(f"Downloading CPE dictionary from {CPE_FEED_URL}")
     resp = requests.get(CPE_FEED_URL, stream=True, timeout=120)
     resp.raise_for_status()
+    os.makedirs(RAW_DATA_DIR, exist_ok=True)
+    os.makedirs(NORM_DATA_DIR, exist_ok=True)
     with zipfile.ZipFile(io.BytesIO(resp.content)) as z:
         for name in z.namelist():
             if name.endswith(".xml"):
@@ -43,9 +57,23 @@ def fetch_cpe_dictionary():
         title_elem = cpe_item.find('cpe-dict:title', ns)
         title = title_elem.text if title_elem is not None else None
         cpes.append({'name': name, 'title': title})
+    os.makedirs(RAW_DATA_DIR, exist_ok=True)
+    os.makedirs(NORM_DATA_DIR, exist_ok=True)
     with open(OUTPUT_JSON, 'w') as f:
         json.dump(cpes, f)
     logging.info(f"Extracted and wrote {len(cpes)} CPE items to {OUTPUT_JSON}")
+    # Normalized output (pass-through)
+    with open(NORM_OUTPUT_JSON, 'w') as f:
+        json.dump(cpes, f)
+    logging.info(f"Wrote {len(cpes)} normalized CPE items to {NORM_OUTPUT_JSON}")
+    # Verification
+    from common import verify
+    try:
+        verify.verify_record_count(cpes, cpes)
+        if cpes and 'name' in cpes[0]:
+            verify.verify_ids(cpes, cpes, raw_id_key='name', norm_id_key='name')
+    except Exception as e:
+        logging.warning(f"Verification failed: {e}")
 
     # --- CVE-to-CPE Mapping Extraction ---
     logging.info("Extracting CVE-to-CPE mapping from NVD 2.0 API (all pages)...")

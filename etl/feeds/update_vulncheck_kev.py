@@ -1,7 +1,7 @@
-from etl.common.secrets import load_api_key
-from etl.common.api import fetch_paginated
-from etl.common.io import write_json
-from etl.common.logging import setup_logging
+from common.common.secrets import load_api_key
+from common.common.api import fetch_paginated
+from common.common.io import write_json
+from common.common.logging import setup_logging
 import vulncheck_sdk
 import os
 

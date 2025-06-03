@@ -1,0 +1,11 @@
+pandas
+openpyxl
+requests
+lxml
+html5lib
+PyYAML
+beautifulsoup4
+playwright
+psycopg2-binary
+feedparser
+libretranslatepy
